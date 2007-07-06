@@ -30,8 +30,10 @@ OF SUCH DAMAGE.
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/select.h>
 #include "spnav.h"
 
 #ifdef USE_X11
@@ -55,7 +57,16 @@ enum {
 #define IS_OPEN		(sock)
 #endif
 
+struct event_node {
+	spnav_event event;
+	struct event_node *next;
+};
+
+/* only used for non-X mode, with spnav_remove_events */
+static struct event_node *ev_queue, *ev_queue_tail;
+
 static int sock;
+
 
 int spnav_open(void)
 {
@@ -66,7 +77,12 @@ int spnav_open(void)
 		return -1;
 	}
 
-	if((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+	if(!(ev_queue = malloc(sizeof *ev_queue))) {
+		return -1;
+	}
+	ev_queue_tail = ev_queue;
+
+	if((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
 		return -1;
 	}
 
@@ -75,6 +91,7 @@ int spnav_open(void)
 	strcpy(addr.sun_path, "/tmp/spacenav_usock");
 
 	if(connect(s, (struct sockaddr*)&addr, sizeof addr) == -1) {
+		perror("connect failed");
 		return -1;
 	}
 
@@ -118,6 +135,12 @@ int spnav_close(void)
 	}
 
 	if(sock) {
+		while(ev_queue) {
+			void *tmp = ev_queue;
+			ev_queue = ev_queue->next;
+			free(tmp);
+		}
+
 		close(sock);
 		sock = 0;
 		return 0;
@@ -238,25 +261,90 @@ int spnav_fd(void)
 	return sock ? sock : -1;
 }
 
+static int event_pending(int s)
+{
+	fd_set rd_set;
+	struct timeval tv;
+
+	if(ev_queue->next) {
+		return 1;
+	}
+
+	FD_ZERO(&rd_set);
+	FD_SET(s, &rd_set);
+
+	/* don't block, just poll */
+	tv.tv_sec = tv.tv_usec = 0;
+
+	if(select(s + 1, &rd_set, 0, 0, &tv) > 0) {
+		return 1;
+	}
+	return 0;
+}
+
+static int read_event(int s, spnav_event *event)
+{
+	int i, rd;
+	int data[8];
+
+	/* if we have a queued event, deliver that one */
+	if(ev_queue->next) {
+		struct event_node *node = ev_queue->next;
+		ev_queue->next = ev_queue->next->next;
+
+		memcpy(event, &node->event, sizeof *event);
+		free(node);
+		return event->type;
+	}
+
+	/* otherwise read one from the connection */
+	do {
+		rd = read(s, data, sizeof data);
+	} while(rd == -1 && errno == EINTR);
+
+	if(rd == -1) {
+		return 0;
+	}
+
+	if(data[0] < 0 || data[0] > 2) {
+		return 0;
+	}
+	event->type = data[0] ? SPNAV_EVENT_BUTTON : SPNAV_EVENT_MOTION;
+
+	if(event->type == SPNAV_EVENT_MOTION) {
+		event->motion.data = &event->motion.x;
+		for(i=0; i<6; i++) {
+			event->motion.data[i] = data[i + 1];
+		}
+		event->motion.period = data[7];
+	} else {
+		event->button.press = data[0] == 1 ? 1 : 0;
+		event->button.bnum = data[1];
+	}
+
+	return event->type;
+}
+
 
 int spnav_wait_event(spnav_event *event)
 {
 #ifdef USE_X11
 	if(dpy) {
 		for(;;) {
-			int evtype;
 			XEvent xev;
 			XNextEvent(dpy, &xev);
 
-			if((evtype = spnav_x11_event(&xev, event)) > 0) {
-				return evtype;
+			if(spnav_x11_event(&xev, event) > 0) {
+				return event->type;
 			}
 		}
 	}
 #endif
 
 	if(sock) {
-		/* TODO implement event reception from the UNIX socket */
+		if(read_event(sock, event) > 0) {
+			return event->type;
+		}
 	}
 	return 0;
 }
@@ -276,7 +364,11 @@ int spnav_poll_event(spnav_event *event)
 #endif
 
 	if(sock) {
-		/* TODO implement event reception from the UNIX socket */
+		if(event_pending(sock)) {
+			if(read_event(sock, event) > 0) {
+				return event->type;
+			}
+		}
 	}
 	return 0;
 }
@@ -301,6 +393,21 @@ static Bool match_events(Display *dpy, XEvent *xev, char *arg)
 }
 #endif
 
+static int enqueue_event(spnav_event *event)
+{
+	struct event_node *node;
+	if(!(node = malloc(sizeof *node))) {
+		return -1;
+	}
+
+	memcpy(&node->event, event, sizeof node->event);
+	node->next = 0;
+	
+	ev_queue_tail->next = node;
+	ev_queue_tail = node;
+	return 0;
+}
+
 int spnav_remove_events(int type)
 {
 	int rm_count = 0;
@@ -317,7 +424,17 @@ int spnav_remove_events(int type)
 #endif
 
 	if(sock) {
-		/* TODO */
+		while(event_pending(sock)) {
+			spnav_event event;
+
+			read_event(sock, &event);
+			if(event.type != type) {
+				enqueue_event(&event);
+			} else {
+				rm_count++;
+			}
+		}
+		return rm_count;
 	}
 	return 0;
 }
