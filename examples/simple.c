@@ -12,18 +12,23 @@ void sig(int s)
 
 int main(void)
 {
+
+#if defined(BUILD_X11)
 	Display *dpy;
 	Window win;
 	unsigned long bpix;
+#endif
+
 	spnav_event sev;
 
 	signal(SIGINT, sig);
+
+#if defined(BUILD_X11)
 
 	if(!(dpy = XOpenDisplay(0))) {
 		fprintf(stderr, "failed to connect to the X server\n");
 		return 1;
 	}
-
 	bpix = BlackPixel(dpy, DefaultScreen(dpy));
 	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 1, 1, 0, bpix, bpix);
 
@@ -34,6 +39,15 @@ int main(void)
 		fprintf(stderr, "failed to connect to the space navigator daemon\n");
 		return 1;
 	}
+
+#elif defined(BUILD_AF_UNIX)
+	if(spnav_open()==-1) {
+	  	fprintf(stderr, "failed to connect to the space navigator daemon\n");
+		return 1;
+	}
+#else
+#error Unknown build type!
+#endif
 
 	/* spnav_wait_event() and spnav_poll_event(), will silently ignore any non-spnav X11 events.
 	 *

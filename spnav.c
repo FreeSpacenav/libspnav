@@ -36,6 +36,8 @@ OF SUCH DAMAGE.
 #include <sys/select.h>
 #include "spnav.h"
 
+#define SPNAV_SOCK_PATH "/tmp/.spnav.sock" 
+
 #ifdef USE_X11
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -52,9 +54,10 @@ enum {
 	CMD_APP_SENS
 };
 
-#define IS_OPEN		(dpy || sock)
+/* TODO: note: 0 is a valid socket fd, -1 isn't */
+#define IS_OPEN		(dpy || (sock != -1))
 #else
-#define IS_OPEN		(sock)
+#define IS_OPEN		(sock != -1)
 #endif
 
 struct event_node {
@@ -65,7 +68,8 @@ struct event_node {
 /* only used for non-X mode, with spnav_remove_events */
 static struct event_node *ev_queue, *ev_queue_tail;
 
-static int sock;
+/* AF_UNIX socket used for alternative communication with daemon */
+static int sock = -1;
 
 
 int spnav_open(void)
@@ -80,6 +84,7 @@ int spnav_open(void)
 	if(!(ev_queue = malloc(sizeof *ev_queue))) {
 		return -1;
 	}
+	ev_queue->next = 0;
 	ev_queue_tail = ev_queue;
 
 	if((s = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -88,7 +93,8 @@ int spnav_open(void)
 
 	memset(&addr, 0, sizeof addr);
 	addr.sun_family = AF_UNIX;
-	strcpy(addr.sun_path, "/tmp/spacenav_usock");
+	strncpy(addr.sun_path, SPNAV_SOCK_PATH, sizeof(addr.sun_path));
+
 
 	if(connect(s, (struct sockaddr*)&addr, sizeof addr) == -1) {
 		perror("connect failed");
@@ -258,7 +264,7 @@ int spnav_fd(void)
 	}
 #endif
 
-	return sock ? sock : -1;
+	return sock;
 }
 
 static int event_pending(int s)

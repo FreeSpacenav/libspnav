@@ -64,16 +64,29 @@ typedef union spnav_event {
 extern "C" {
 #endif
 
+/* Open connection to the daemon via AF_UNIX socket.
+ * The unix domain socket interface is an alternative to the original magellan
+ * protocol, and it is *NOT* compatible with the 3D connexion driver. If you wish
+ * to remain compatible, use the X11 protocol (spnav_x11_open, see below).
+ * Returns -1 on failure.
+ */
 int spnav_open(void);
+
+/* Close connection to the daemon. Use it for X11 or AF_UNIX connections.
+ * Returns -1 on failure 
+ */
 int spnav_close(void);
 
 /* Retrieves the file descriptor used for communication with the daemon, for
  * use with select() by the application, if so required.
  * If the X11 mode is used, the socket used to communicate with the X server is
  * returned, so the result of this function is always reliable.
+ * If AF_UNIX mode is used, the fd of the socket is returned or -1 if
+ * no connection is open / failure occured.
  */
 int spnav_fd(void);
 
+/* TODO: document */
 int spnav_sensitivity(double sens);
 
 /* blocks waiting for space-nav events. returns 0 if an error occurs */
@@ -94,9 +107,26 @@ int spnav_remove_events(int type);
 
 
 #ifdef USE_X11
+/* Opens a connection to the daemon, using the original magellan X11 protocol.
+ * Any application using this protocol should be compatible with the proprietary
+ * 3D connexion driver too.
+ */
 int spnav_x11_open(Display *dpy, Window win);
+
+/* Sets the application window, that is to receive events by the driver.
+ *
+ * NOTE: Any number of windows can be registered for events, when using the
+ * free spnavd daemon. I suspect that the proprietary 3D connexion daemon only
+ * sends events to one window at a time, thus this function replaces the window
+ * that receives events. If compatibility with 3dxsrv is required, do not
+ * assume that you can register multiple windows.
+ */
 int spnav_x11_window(Window win);
 
+/* Examines an arbitrary X11 event. If it's a spnav event, it returns the event
+ * type (SPNAV_EVENT_MOTION or SPNAV_EVENT_BUTTON) and fills in the spnav_event
+ * structure passed through "event" accordingly. Otherwise, it returns 0.
+ */
 int spnav_x11_event(const XEvent *xev, spnav_event *event);
 #endif
 
