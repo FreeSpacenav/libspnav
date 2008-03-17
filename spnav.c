@@ -267,6 +267,10 @@ int spnav_fd(void)
 	return sock;
 }
 
+
+/* Checks both the event queue and the daemon socket for pending events.
+ * In either case, it returns immediately with true/false values (doesn't block).
+ */
 static int event_pending(int s)
 {
 	fd_set rd_set;
@@ -288,6 +292,10 @@ static int event_pending(int s)
 	return 0;
 }
 
+/* If there are events waiting in the event queue, dequeue one and
+ * return that, otherwise read one from the daemon socket.
+ * This might block unless we called event_pending() first and it returned true.
+ */
 static int read_event(int s, spnav_event *event)
 {
 	int i, rd;
@@ -297,6 +305,11 @@ static int read_event(int s, spnav_event *event)
 	if(ev_queue->next) {
 		struct event_node *node = ev_queue->next;
 		ev_queue->next = ev_queue->next->next;
+
+		/* dequeued the last event, must update tail pointer */
+		if(ev_queue_tail == node) {
+			ev_queue_tail = ev_queue;
+		}
 
 		memcpy(event, &node->event, sizeof *event);
 		free(node);
@@ -399,18 +412,26 @@ static Bool match_events(Display *dpy, XEvent *xev, char *arg)
 }
 #endif
 
-static int enqueue_event(spnav_event *event)
+/* Appends an event to an event list.
+ * Tailptr must be a pointer to the tail pointer of the list. NULL means
+ * append to the global event queue.
+ */
+static int enqueue_event(spnav_event *event, struct event_node **tailptr)
 {
 	struct event_node *node;
 	if(!(node = malloc(sizeof *node))) {
 		return -1;
 	}
 
-	memcpy(&node->event, event, sizeof node->event);
+	node->event = *event;
 	node->next = 0;
+
+	if(!tailptr) {
+		tailptr = &ev_queue_tail;
+	}
 	
-	ev_queue_tail->next = node;
-	ev_queue_tail = node;
+	(*tailptr)->next = node;
+	*tailptr = node;
 	return 0;
 }
 
@@ -430,16 +451,38 @@ int spnav_remove_events(int type)
 #endif
 
 	if(sock) {
+		struct event_node *tmplist, *tmptail;
+
+		if(!(tmplist = tmptail = malloc(sizeof *tmplist))) {
+			return -1;
+		}
+		tmplist->next = 0;
+
+		/* while there are events in the event queue, or the daemon socket */
 		while(event_pending(sock)) {
 			spnav_event event;
 
-			read_event(sock, &event);
+			read_event(sock, &event);	/* remove next event */
 			if(event.type != type) {
-				enqueue_event(&event);
+				/* We don't want to drop this one, wrong type. Keep the event
+				 * in the temporary list, for deferred reinsertion
+				 */
+				enqueue_event(&event, &tmptail);
 			} else {
 				rm_count++;
 			}
 		}
+
+		/* reinsert any events we removed that we didn't mean to */
+		while(tmplist->next) {
+			struct event_node *node = tmplist->next;
+
+			enqueue_event(&node->event, 0);
+
+			free(tmplist);
+			tmplist = node;
+		}
+
 		return rm_count;
 	}
 	return 0;
