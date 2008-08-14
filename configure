@@ -7,6 +7,13 @@ OPT=yes
 DBG=yes
 X11=yes
 
+srcdir="`dirname "$0"`"
+libdir=lib
+
+if [ "`uname -m`" = 'x86_64' ]; then
+	libdir=lib64
+fi
+
 for arg; do
 	case "$arg" in
 	--prefix=*)
@@ -56,9 +63,11 @@ if [ "$X11" = "no" ]; then
 	echo ""
 fi
 
-# create makefile
-echo 'creating makefile ...'
+# create Makefile
+echo 'creating Makefile ...'
 echo "PREFIX = $PREFIX" >Makefile
+echo "srcdir = $srcdir" >>Makefile
+echo "libdir = $libdir" >>Makefile
 
 if [ "$DBG" = 'yes' ]; then
 	echo 'dbg = -g' >>Makefile
@@ -73,7 +82,7 @@ if [ "$X11" = 'yes' ]; then
 	echo 'xlib = -lX11' >>Makefile
 fi
 
-cat Makefile.in >>Makefile
+cat "$srcdir/Makefile.in" >>Makefile
 
 # create spnav_config.h
 echo 'creating spnav_config.h ...'

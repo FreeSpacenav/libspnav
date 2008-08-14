@@ -16,7 +16,10 @@ $(lib_a): $(obj)
 	$(AR) rcs $@ $(obj)
 
 $(lib_so): $(obj)
-	$(CC) $(CFLAGS) -shared -o $@ $(obj)
+	$(CC) -shared -o $@ $(obj)
+
+%.o: $(srcdir)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:
@@ -28,13 +31,13 @@ distclean:
 
 .PHONY: install
 install: $(lib_a) $(lib_so)
-	cp $(lib_a) $(PREFIX)/lib/$(lib_a)
-	cp $(lib_so) $(PREFIX)/lib/$(lib_so)
-	cp $(hdr) $(PREFIX)/include/
+	cp $(lib_a) $(PREFIX)/$(libdir)/$(lib_a)
+	cp $(lib_so) $(PREFIX)/$(libdir)/$(lib_so)
+	for h in $(hdr); do cp -p $(srcdir)/$$h $(PREFIX)/include/; done
 
 .PHONY: uninstall
 uninstall:
-	rm -f $(PREFIX)/lib/$(lib_a)
-	rm -f $(PREFIX)/lib/$(lib_so)
+	rm -f $(PREFIX)/$(libdir)/$(lib_a)
+	rm -f $(PREFIX)/$(libdir)/$(lib_so)
 	for i in $(hdr); do rm -f $(PREFIX)/include/$$i; done
 
