@@ -1,4 +1,7 @@
-1. About the libspnav library
+libspnav - 0.3
+--------------
+
+1. About
 
 The libspnav library is provided as a replacement of the magellan library. It
 provides a cleaner, and more orthogonal interface. libspnav supports both the
