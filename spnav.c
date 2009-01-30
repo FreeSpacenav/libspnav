@@ -1,6 +1,6 @@
 /*
 This file is part of libspnav, part of the spacenav project (spacenav.sf.net)
-Copyright (C) 2007 John Tsiombikas <nuclear@siggraph.org>
+Copyright (C) 2007-2009 John Tsiombikas <nuclear@siggraph.org>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@ OF SUCH DAMAGE.
 #include <sys/select.h>
 #include "spnav.h"
 
-#define SPNAV_SOCK_PATH "/tmp/.spnav.sock" 
+#define SPNAV_SOCK_PATH "/var/run/spnav.sock" 
 
 #ifdef USE_X11
 #include <X11/Xlib.h>
@@ -54,7 +54,6 @@ enum {
 	CMD_APP_SENS
 };
 
-/* TODO: note: 0 is a valid socket fd, -1 isn't */
 #define IS_OPEN		(dpy || (sock != -1))
 #else
 #define IS_OPEN		(sock != -1)

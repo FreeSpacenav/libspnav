@@ -1,1 +1,47 @@
-to be written...
+1. About the libspnav library
+
+The libspnav library is provided as a replacement of the magellan library. It
+provides a cleaner, and more orthogonal interface. libspnav supports both the
+original X11 protocol for communicating with the driver, and the new
+alternative non-X protocol. Programs that choose to use the X11 protocol, are
+automatically compatible with either the free spacenavd driver or the official
+3dxserv, as if they were using the magellan SDK.
+
+Also, libspnav provides a magellan API wrapper on top of the new API. So, any
+applications that were using the magellan library, can switch to libspnav
+without any changes. And programmers that are familliar with the magellan API
+can continue using it with a free library without the restrictions of the
+official SDK.
+
+
+2. Installation
+
+Configure, make, and make install as usual.
+
+
+3. License
+
+libspnav is part of the spacenav project (spacenav.sf.net)
+Copyright (C) 2007-2009 John Tsiombikas <nuclear@member.fsf.org>
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE.
