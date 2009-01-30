@@ -2,7 +2,8 @@
 obj = spnav.o $(magellan_obj)
 hdr = spnav.h spnav_magellan.h spnav_config.h
 lib_a = libspnav.a
-lib_so = libspnav.so
+soname = libspnav.so.0
+lib_so = $(soname).1
 
 CC = gcc
 AR = ar
@@ -16,7 +17,7 @@ $(lib_a): $(obj)
 	$(AR) rcs $@ $(obj)
 
 $(lib_so): $(obj)
-	$(CC) -shared -o $@ $(obj)
+	$(CC) -shared -Wl,-soname,$(soname) -o $@ $(obj)
 
 %.o: $(srcdir)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
