@@ -16,7 +16,6 @@ static inline float v3_dot(vec3_t v1, vec3_t v2);
 static inline quat_t quat_cons(float s, float x, float y, float z);
 static inline vec3_t quat_vec(quat_t q);
 static inline quat_t quat_mul(quat_t q1, quat_t q2);
-static inline quat_t quat_normalize(quat_t q);
 static inline void quat_to_mat(mat4_t res, quat_t q);
 quat_t quat_rotate(quat_t q, float angle, float x, float y, float z);
 

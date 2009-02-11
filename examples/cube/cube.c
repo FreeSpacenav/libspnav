@@ -258,9 +258,9 @@ int handle_event(XEvent *xev)
 			/* if so deal with motion and button events */
 			if(spev.type == SPNAV_EVENT_MOTION) {
 				/* apply axis/angle rotation to the quaternion */
-				float angle = 0.000005 * sqrt(SQ(spev.motion.rx) + SQ(spev.motion.ry) + SQ(spev.motion.rz));
-				rot = quat_rotate(rot, angle, -spev.motion.rx, -spev.motion.ry, spev.motion.rz);
-				rot = quat_normalize(rot);
+				float axis_len = sqrt(SQ(spev.motion.rx) + SQ(spev.motion.ry) + SQ(spev.motion.rz));
+				rot = quat_rotate(rot, axis_len * 0.001, -spev.motion.rx / axis_len,
+						-spev.motion.ry / axis_len, spev.motion.rz / axis_len);
 
 				/* add translation */
 				pos.x += spev.motion.x * 0.001;

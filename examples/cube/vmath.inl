@@ -46,16 +46,6 @@ static inline quat_t quat_mul(quat_t q1, quat_t q2)
 	return res;
 }
 
-static inline quat_t quat_normalize(quat_t q)
-{
-	float len = sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
-	q.x /= len;
-	q.y /= len;
-	q.z /= len;
-	q.w /= len;
-	return q;
-}
-
 static inline void quat_to_mat(mat4_t res, quat_t q)
 {
 	m4_cons(res,	1.0 - 2.0 * q.y*q.y - 2.0 * q.z*q.z,	2.0 * q.x * q.y + 2.0 * q.w * q.z,		2.0 * q.z * q.x - 2.0 * q.w * q.y, 0,
