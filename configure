@@ -10,9 +10,9 @@ X11=yes
 srcdir="`dirname "$0"`"
 libdir=lib
 
-if [ "`uname -m`" = 'x86_64' ]; then
-	libdir=lib64
-fi
+#if [ "`uname -m`" = 'x86_64' ]; then
+#	libdir=lib64
+#fi
 
 for arg; do
 	case "$arg" in

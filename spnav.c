@@ -320,7 +320,7 @@ static int read_event(int s, spnav_event *event)
 		rd = read(s, data, sizeof data);
 	} while(rd == -1 && errno == EINTR);
 
-	if(rd == -1) {
+	if(rd <= 0) {
 		return 0;
 	}
 
