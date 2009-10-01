@@ -37,7 +37,7 @@ OF SUCH DAMAGE.
 
 enum {
 	MagellanInputMotionEvent = 1,
-	MagellanInputButtonEvent = 2,
+	MagellanInputButtonPressEvent = 2,
 	MagellanInputButtonReleaseEvent = 3
 };
 
