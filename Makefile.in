@@ -7,7 +7,7 @@ lib_so = $(soname).1
 
 CC = gcc
 AR = ar
-CFLAGS = $(opt) $(dbg) -std=c89 -fpic -pedantic -Wall -fno-strict-aliasing -g -I.
+CFLAGS = $(opt) $(dbg) -std=c89 -fpic -pedantic -Wall -fno-strict-aliasing -I.
 
 .PHONY: all
 all: $(lib_a) $(lib_so)

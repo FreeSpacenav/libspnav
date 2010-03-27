@@ -1,6 +1,6 @@
 /*
 This file is part of libspnav, part of the spacenav project (spacenav.sf.net)
-Copyright (C) 2007-2009 John Tsiombikas <nuclear@siggraph.org>
+Copyright (C) 2007-2010 John Tsiombikas <nuclear@member.fsf.org>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -205,7 +205,7 @@ static int x11_sensitivity(double sens)
 	Window daemon_win;
 	float fsens;
 	unsigned int isens;
-	
+
 	if(!(daemon_win = get_daemon_window(dpy))) {
 		return -1;
 	}
@@ -428,7 +428,7 @@ static int enqueue_event(spnav_event *event, struct event_node **tailptr)
 	if(!tailptr) {
 		tailptr = &ev_queue_tail;
 	}
-	
+
 	(*tailptr)->next = node;
 	*tailptr = node;
 	return 0;

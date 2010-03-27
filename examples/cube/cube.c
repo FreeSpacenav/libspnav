@@ -33,7 +33,7 @@ GLXContext ctx;
 Window win;
 
 vec3_t pos = {0, 0, -6};
-quat_t rot = {0, 0, 0, 1};
+quat_t rot = {0, 0, 0, 1};	/* that's 1 + 0i + 0j + 0k */
 
 int redisplay;
 
@@ -130,7 +130,7 @@ int create_gfx(int xsz, int ysz)
 	XSetWMProtocols(dpy, win, &wm_del_win, 1);
 
 	set_window_title("libspnav cube");
-	
+
 	class_hint.res_name = "cube";
 	class_hint.res_class = "cube";
 	XSetClassHint(dpy, win, &class_hint);
@@ -168,7 +168,7 @@ void set_window_title(const char *title)
 void redraw(void)
 {
 	mat4_t xform;
-	
+
 	quat_to_mat(xform, rot);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -292,6 +292,7 @@ int handle_event(XEvent *xev)
 		if((sym & 0xff) == 27) {
 			return 1;
 		}
+		break;
 
 	case ConfigureNotify:
 		{

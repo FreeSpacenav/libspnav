@@ -1,6 +1,6 @@
 /*
 This file is part of libspnav, part of the spacenav project (spacenav.sf.net)
-Copyright (C) 2007-2009 John Tsiombikas <nuclear@siggraph.org>
+Copyright (C) 2007-2010 John Tsiombikas <nuclear@member.fsf.org>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -71,7 +71,7 @@ int MagellanInputEvent(Display *dpy, XEvent *xev, MagellanIntEvent *mev)
 		}
 		mev->u.data[6] = event.motion.period * 1000 / 60;
 	} else {
-		mev->type = event.button.press ? MagellanInputButtonEvent : MagellanInputButtonReleaseEvent;
+		mev->type = event.button.press ? MagellanInputButtonPressEvent : MagellanInputButtonReleaseEvent;
 		mev->u.button = event.button.bnum;
 	}
 
@@ -96,7 +96,7 @@ int MagellanTranslateEvent(Display *dpy, XEvent *xev, MagellanFloatEvent *mev, d
 		}
 		mev->MagellanPeriod = event.motion.period;
 	} else {
-		mev->MagellanType = event.button.press ? MagellanInputButtonEvent : MagellanInputButtonReleaseEvent;
+		mev->MagellanType = event.button.press ? MagellanInputButtonPressEvent : MagellanInputButtonReleaseEvent;
 		mev->MagellanButton = event.button.bnum;
 	}
 
