@@ -73,7 +73,7 @@ extern "C" {
 int spnav_open(void);
 
 /* Close connection to the daemon. Use it for X11 or AF_UNIX connections.
- * Returns -1 on failure 
+ * Returns -1 on failure
  */
 int spnav_close(void);
 
