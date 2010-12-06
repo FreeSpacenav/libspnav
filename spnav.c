@@ -36,7 +36,7 @@ OF SUCH DAMAGE.
 #include <sys/select.h>
 #include "spnav.h"
 
-#define SPNAV_SOCK_PATH "/var/run/spnav.sock" 
+#define SPNAV_SOCK_PATH "/var/run/spnav.sock"
 
 #ifdef USE_X11
 #include <X11/Xlib.h>
