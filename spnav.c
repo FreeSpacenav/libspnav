@@ -481,6 +481,7 @@ int spnav_remove_events(int type)
 			free(tmplist);
 			tmplist = node;
 		}
+		free(tmplist);
 
 		return rm_count;
 	}
