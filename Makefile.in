@@ -31,6 +31,7 @@ distclean:
 
 .PHONY: install
 install: $(lib_a) $(lib_so)
+	mkdir -p $(PREFIX)/$(libdir) $(PREFIX)/include
 	cp $(lib_a) $(PREFIX)/$(libdir)/$(lib_a)
 	cp $(lib_so) $(PREFIX)/$(libdir)/$(lib_so)
 	for h in $(hdr); do cp -p $(srcdir)/$$h $(PREFIX)/include/; done
