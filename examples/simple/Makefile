@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -pedantic -Wall -g -I../..
-LDFLAGS = -L../.. -lspnav -lX11
+CFLAGS = -pedantic -Wall -g -I../.. -I/usr/local/include
+LDFLAGS = -L../.. -L/usr/local/lib -lspnav -lX11
 
 .PHONY: all
 all: simple_x11 simple_af_unix
