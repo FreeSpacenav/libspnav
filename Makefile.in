@@ -4,10 +4,11 @@ hdr = spnav.h spnav_magellan.h spnav_config.h
 lib_a = libspnav.a
 soname = libspnav.so.0
 lib_so = $(soname).1
+devlink = libspnav.so
 
 CC = gcc
 AR = ar
-CFLAGS = $(opt) $(dbg) -std=c89 -fpic -pedantic -Wall -fno-strict-aliasing -I.
+CFLAGS = $(opt) $(dbg) -std=c89 -fpic -pedantic -Wall -fno-strict-aliasing -I. -I/usr/local/include
 
 .PHONY: all
 all: $(lib_a) $(lib_so)
@@ -34,11 +35,16 @@ install: $(lib_a) $(lib_so)
 	mkdir -p $(PREFIX)/$(libdir) $(PREFIX)/include
 	cp $(lib_a) $(PREFIX)/$(libdir)/$(lib_a)
 	cp $(lib_so) $(PREFIX)/$(libdir)/$(lib_so)
+	rm -f $(PREFIX)/$(libdir)/$(soname) $(PREFIX)/$(libdir)/$(devlink)
+	ln -s $(PREFIX)/$(libdir)/$(lib_so) $(PREFIX)/$(libdir)/$(soname)
+	ln -s $(PREFIX)/$(libdir)/$(soname) $(PREFIX)/$(libdir)/$(devlink)
 	for h in $(hdr); do cp -p $(srcdir)/$$h $(PREFIX)/include/; done
 
 .PHONY: uninstall
 uninstall:
 	rm -f $(PREFIX)/$(libdir)/$(lib_a)
 	rm -f $(PREFIX)/$(libdir)/$(lib_so)
+	rm -f $(PREFIX)/$(libdir)/$(soname)
+	rm -f $(PREFIX)/$(libdir)/$(devlink)
 	for i in $(hdr); do rm -f $(PREFIX)/include/$$i; done
 
