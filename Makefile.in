@@ -8,7 +8,8 @@ devlink = libspnav.so
 
 CC = gcc
 AR = ar
-CFLAGS = $(opt) $(dbg) -std=c89 -fpic -pedantic -Wall -fno-strict-aliasing -I. -I/usr/local/include
+CFLAGS = $(opt) $(dbg) -std=c89 -fpic -pedantic -Wall -fno-strict-aliasing -I. -I/usr/local/include $(user_cflags)
+LDFLAGS = $(user_ldflags)
 
 .PHONY: all
 all: $(lib_a) $(lib_so)
@@ -17,7 +18,7 @@ $(lib_a): $(obj)
 	$(AR) rcs $@ $(obj)
 
 $(lib_so): $(obj)
-	$(CC) -shared -Wl,-soname,$(soname) -o $@ $(obj)
+	$(CC) -shared -Wl,-soname,$(soname) -o $@ $(obj) $(LDFLAGS)
 
 %.o: $(srcdir)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@

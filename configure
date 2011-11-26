@@ -56,6 +56,12 @@ echo "  prefix: $PREFIX"
 echo "  optimize for speed: $OPT"
 echo "  include debugging symbols: $DBG"
 echo "  x11 communication method: $X11"
+if [ -n "$CFLAGS" ]; then
+	echo "  cflags: $CFLAGS"
+fi
+if [ -n "$LDFLAGS" ]; then
+	echo "  ldflags: $LDFLAGS"
+fi
 echo ""
 
 if [ "$X11" = "no" ]; then
@@ -68,6 +74,13 @@ echo 'creating Makefile ...'
 echo "PREFIX = $PREFIX" >Makefile
 echo "srcdir = $srcdir" >>Makefile
 echo "libdir = $libdir" >>Makefile
+
+if [ -n "$CFLAGS" ]; then
+	echo "user_cflags = $CFLAGS" >>Makefile
+fi
+if [ -n "$LDFLAGS" ]; then
+	echo "user_ldflags = $LDFLAGS" >>Makefile
+fi
 
 if [ "$DBG" = 'yes' ]; then
 	echo 'dbg = -g' >>Makefile
