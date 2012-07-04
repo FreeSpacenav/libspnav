@@ -147,7 +147,7 @@ int spnav_close(void)
 		}
 
 		close(sock);
-		sock = 0;
+		sock = -1;
 		return 0;
 	}
 
