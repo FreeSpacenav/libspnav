@@ -97,6 +97,7 @@ int spnav_open(void)
 
 	if(connect(s, (struct sockaddr*)&addr, sizeof addr) == -1) {
 		perror("connect failed");
+		close(s);
 		return -1;
 	}
 
