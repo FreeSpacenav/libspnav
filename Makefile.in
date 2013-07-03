@@ -1,15 +1,29 @@
 
 obj = spnav.o $(magellan_obj)
 hdr = spnav.h spnav_magellan.h spnav_config.h
-lib_a = libspnav.a
-soname = libspnav.so.0
-lib_so = $(soname).1
-devlink = libspnav.so
+
+name = spnav
+lib_a = lib$(name).a
+
+incpaths = -I. -I/usr/local/include -I/usr/X11R6/include
+libpaths = -L/usr/local/lib -L/usr/X11R6/lib
 
 CC = gcc
 AR = ar
-CFLAGS = $(opt) $(dbg) -std=c89 -fpic -pedantic -Wall -fno-strict-aliasing -I. -I/usr/local/include $(user_cflags)
-LDFLAGS = $(user_ldflags)
+CFLAGS = $(opt) $(dbg) -std=c89 $(pic) -pedantic -Wall -fno-strict-aliasing $(incpaths) $(user_cflags)
+LDFLAGS = $(libpaths) $(user_ldflags) $(xlib)
+
+ifeq ($(shell uname -s), Darwin)
+	lib_so = libspnav.dylib
+	shared = -dynamiclib
+else
+	devlink = lib$(name).so
+	soname = $(devlink).$(so_major)
+	lib_so = $(soname).$(so_minor)
+	shared = -shared -Wl,-soname,$(soname)
+	pic = -fPIC
+endif
+
 
 .PHONY: all
 all: $(lib_a) $(lib_so)
@@ -18,7 +32,7 @@ $(lib_a): $(obj)
 	$(AR) rcs $@ $(obj)
 
 $(lib_so): $(obj)
-	$(CC) -shared -Wl,-soname,$(soname) -o $@ $(obj) $(LDFLAGS)
+	$(CC) $(shared) -o $@ $(obj) $(LDFLAGS)
 
 %.o: $(srcdir)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -36,16 +50,19 @@ install: $(lib_a) $(lib_so)
 	mkdir -p $(DESTDIR)$(PREFIX)/$(libdir) $(DESTDIR)$(PREFIX)/include
 	cp $(lib_a) $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_a)
 	cp $(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so)
-	rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink)
-	ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(soname)
-	ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink)
+	[ -n "$(soname)" ] && \
+		rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) && \
+		ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) && \
+		ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) || \
+		true
 	for h in $(hdr); do cp -p $(srcdir)/$$h $(DESTDIR)$(PREFIX)/include/; done
 
 .PHONY: uninstall
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_a)
 	rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so)
-	rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(soname)
-	rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink)
+	[ -n "$(soname)" ] && \
+		rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) || \
+		true
 	for i in $(hdr); do rm -f $(DESTDIR)$(PREFIX)/include/$$i; done
 
