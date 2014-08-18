@@ -17,6 +17,8 @@ ifeq ($(shell uname -s), Darwin)
 	lib_so = libspnav.dylib
 	shared = -dynamiclib
 else
+	so_major = 0
+	so_minor = 1
 	devlink = lib$(name).so
 	soname = $(devlink).$(so_major)
 	lib_so = $(soname).$(so_minor)
