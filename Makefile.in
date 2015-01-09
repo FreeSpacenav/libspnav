@@ -48,7 +48,7 @@ distclean:
 	rm -f $(obj) $(lib_a) $(lib_so) Makefile
 
 .PHONY: install
-install: $(lib_a) $(lib_so)
+install: $(lib_a) $(lib_so) $(hdr)
 	mkdir -p $(DESTDIR)$(PREFIX)/$(libdir) $(DESTDIR)$(PREFIX)/include
 	cp $(lib_a) $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_a)
 	cp $(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so)
