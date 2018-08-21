@@ -1,0 +1,7 @@
+*.o
+*.d
+*.swp
+*.a
+*.so
+*.so.*
+spnav_config.h
