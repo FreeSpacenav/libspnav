@@ -37,6 +37,7 @@ OF SUCH DAMAGE.
 #include "spnav.h"
 
 #define SPNAV_SOCK_PATH "/var/run/spnav.sock"
+#define SPNAV1_SOCK_PATH "/var/run/spnav1.sock"
 
 #ifdef USE_X11
 #include <X11/Xlib.h>
@@ -69,12 +70,25 @@ static struct event_node *ev_queue, *ev_queue_tail;
 
 /* AF_UNIX socket used for alternative communication with daemon */
 static int sock = -1;
+/* protocol version */
+static int proto;
+
+
+static int conn_unix(int s, const char *path)
+{
+	struct sockaddr_un addr;
+
+	memset(&addr, 0, sizeof addr);
+	addr.sun_family = AF_UNIX;
+	strncpy(addr.sun_path, path, sizeof(addr.sun_path));
+
+	return connect(s, (struct sockaddr*)&addr, sizeof addr);
+}
 
 
 int spnav_open(void)
 {
 	int s;
-	struct sockaddr_un addr;
 
 	if(IS_OPEN) {
 		return -1;
@@ -90,15 +104,14 @@ int spnav_open(void)
 		return -1;
 	}
 
-	memset(&addr, 0, sizeof addr);
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, SPNAV_SOCK_PATH, sizeof(addr.sun_path));
-
-
-	if(connect(s, (struct sockaddr*)&addr, sizeof addr) == -1) {
-		perror("connect failed");
-		close(s);
-		return -1;
+	proto = 0;
+	if(conn_unix(s, SPNAVEXT_SOCK_PATH) == -1) {
+		proto = 1;
+		if(conn_unix(s, SPNAV_SOCK_PATH) == -1) {
+			perror("failed to connect");
+			close(s);
+			return -1;
+		}
 	}
 
 	sock = s;
@@ -140,7 +153,7 @@ int spnav_close(void)
 		return -1;
 	}
 
-	if(sock) {
+	if(sock != -1) {
 		while(ev_queue) {
 			void *tmp = ev_queue;
 			ev_queue = ev_queue->next;

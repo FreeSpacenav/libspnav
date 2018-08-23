@@ -1,6 +1,6 @@
 /*
 This file is part of libspnav, part of the spacenav project (spacenav.sf.net)
-Copyright (C) 2007-2010 John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2007-2018 John Tsiombikas <nuclear@member.fsf.org>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -129,6 +129,67 @@ int spnav_x11_window(Window win);
  */
 int spnav_x11_event(const XEvent *xev, spnav_event *event);
 #endif
+
+
+/* ---- spnav 1.x calls ---- */
+#define SPNAV_VERSION_1
+
+/* spnav_get_* queries. Using spnav_get_int on a string query will return the
+ * length of the string that would be returned by spnav_get_str. Make sure to
+ * pass a buffer of at least length + 1 bytes to spnav_get_str, if you wish to
+ * avoid truncation. Returned strings are always zero-terminated, even when
+ * truncation is necessary.
+ *
+ * spnav_get_* functions return 0 on success, or -1 on failure.
+ */
+enum {
+	SPNAV_GET_NUM_BUTTONS,	/* int: number of buttons on device */
+	SPNAV_GET_DEV_NAME,		/* str: device name */
+	SPNAV_GET_HAVE_DISP,	/* int: non-zero if the device has a display */
+	SPNAV_GET_DISP_XRES,	/* int: display horizontal resolution */
+	SPNAV_GET_DISP_YRES,	/* int: display vertical resolution */
+	SPNAV_GET_DISP_COLORS,	/* int: display number of colors */
+};
+int spnav_get_int(int query, int *res);
+int spnav_get_str(int query, char *buf, int bufsz);
+
+/* spnav display functions (for devices which have a display) */
+
+/* after drawing anything, you must call one of the update functions for the
+ * changes to be sent to the device and become visible.
+ */
+/* update the whole display area */
+int spnav_disp_update(void);
+/* update a specific area of the display */
+int spnav_disp_update_rect(int x, int y, int w, int h);
+
+/* map the spacenavd display framebuffer into the client address space for
+ * direct drawing. Don't forget to call an update function (see above), in
+ * order for any changes to take effect.
+ */
+void *spnav_disp_map(void);
+/* unmap the spacenavd framebuffer shared memory */
+int spnav_disp_unmap(void);
+
+/* set color foreground/background to be used by subsequent drawing commands */
+int spnav_disp_color(unsigned int fgcol, unsigned int bgcol);
+
+/* position the text cursor for subsequent spnav_disp_print calls */
+int spnav_disp_cursor(int row, int col);
+/* print a zero-terminated string at the current cursor location. Cursor
+ * coordinates will be updated automatically.
+ */
+int spnav_disp_print(const char *str);
+
+/* clear the whole framebuffer to the current background color */
+int spnav_disp_clear(void);
+/* draw the outline of a rectangle in the current foreground color */
+int spnav_disp_rect(int x, int y, int w, int h);
+/* draw a filled rectangle in the current foreground color */
+int spnav_disp_fill_rect(int x, int y, int w, int h);
+/* draw a line in the current foreground color */
+int spnav_disp_line(int x0, int y0, int x1, int y1);
+
 
 #ifdef __cplusplus
 }
