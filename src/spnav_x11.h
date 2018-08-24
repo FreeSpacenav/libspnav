@@ -24,50 +24,12 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
-/* input source abstraction */
-#ifndef INPSRC_H_
-#define INPSRC_H_
+#ifndef SPNAV_X11_H_
+#define SPNAV_X11_H_
 
-struct display;
-
-struct input_src {
-	const char *name;	/* module name */
-	int fd;				/* file descriptor for select */
-	void *data;			/* extra data */
-
-	struct display *disp;	/* display callbacks */
-
-	int (*open)(void);
-	int (*close)(void);
-
-	int (*pending)(void);
-	int (*process)(void);
-
-	int (*set_flt)(double);
-	int (*set_int)(int);
-	int (*set_str)(const char*);
-
-	int (*get_flt)(double*);
-	int (*get_int)(int*);
-	int (*get_str)(char*, int);
+struct x11_data {
+	void *dpy;
+	unsigned int win;
 };
 
-struct display {
-	struct input_src *inp;
-	int width, height;
-	int num_colors;
-
-	void *(*map)(void);
-	int (*unmap)(void);
-
-	int (*color)(unsigned int, unsigned int);
-	int (*cursor)(int, int);
-	int (*print)(const char*);
-	int (*clear)(void);
-	int (*rect)(int, int, int, int);
-	int (*fill)(int, int, int, int);
-	int (*line)(int, int, int, int);
-};
-
-
-#endif	/* INPSRC_H_ */
+#endif	/* SPNAV_X11_H_ */
