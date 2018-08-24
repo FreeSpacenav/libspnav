@@ -1,11 +1,11 @@
-
-obj = spnav.o $(magellan_obj)
-hdr = spnav.h spnav_magellan.h spnav_config.h
+src = $(sort $(wildcard src/*.c))
+obj = $(src:.c=.o)
+pubhdr = $(wildcard include/*.h)
 
 name = spnav
 lib_a = lib$(name).a
 
-incpaths = -I. -I/usr/local/include -I/usr/X11R6/include
+incpaths = -Iinclude -Isrc -I/usr/local/include -I/usr/X11R6/include
 libpaths = -L/usr/local/lib -L/usr/X11R6/lib
 
 CC = gcc
@@ -48,7 +48,7 @@ distclean:
 	rm -f $(obj) $(lib_a) $(lib_so) Makefile
 
 .PHONY: install
-install: $(lib_a) $(lib_so) $(hdr)
+install: $(lib_a) $(lib_so) $(pubhdr)
 	mkdir -p $(DESTDIR)$(PREFIX)/$(libdir) $(DESTDIR)$(PREFIX)/include
 	cp $(lib_a) $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_a)
 	cp $(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so)
@@ -57,7 +57,7 @@ install: $(lib_a) $(lib_so) $(hdr)
 		ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) && \
 		ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) || \
 		true
-	for h in $(hdr); do cp -p $(srcdir)/$$h $(DESTDIR)$(PREFIX)/include/; done
+	for h in $(pubhdr); do cp -p $(srcdir)/$$h $(DESTDIR)$(PREFIX)/include/; done
 
 .PHONY: uninstall
 uninstall:
@@ -66,5 +66,5 @@ uninstall:
 	[ -n "$(soname)" ] && \
 		rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) || \
 		true
-	for i in $(hdr); do rm -f $(DESTDIR)$(PREFIX)/include/$$i; done
+	for i in $(pubhdr); do rm -f $(DESTDIR)$(PREFIX)/include/$$i; done
 

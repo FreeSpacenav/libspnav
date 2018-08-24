@@ -148,7 +148,7 @@ enum {
 	SPNAV_GET_HAVE_DISP,	/* int: non-zero if the device has a display */
 	SPNAV_GET_DISP_XRES,	/* int: display horizontal resolution */
 	SPNAV_GET_DISP_YRES,	/* int: display vertical resolution */
-	SPNAV_GET_DISP_COLORS,	/* int: display number of colors */
+	SPNAV_GET_DISP_COLORS	/* int: display number of colors */
 };
 int spnav_get_int(int query, int *res);
 int spnav_get_str(int query, char *buf, int bufsz);

@@ -91,22 +91,22 @@ if [ "$OPT" = 'yes' ]; then
 fi
 
 if [ "$X11" = 'yes' ]; then
-	echo 'magellan_obj = spnav_magellan.o' >>Makefile
 	echo 'xlib = -lX11' >>Makefile
 fi
 
 cat "$srcdir/Makefile.in" >>Makefile
 
 # create spnav_config.h
+cfghdr=include/spnav_config.h
 echo 'creating spnav_config.h ...'
-echo '#ifndef SPNAV_CONFIG_H_' >spnav_config.h
-echo '#define SPNAV_CONFIG_H_' >>spnav_config.h
-echo '' >>spnav_config.h
+echo '#ifndef SPNAV_CONFIG_H_' >$cfghdr
+echo '#define SPNAV_CONFIG_H_' >>$cfghdr
+echo '' >>$cfghdr
 if [ "$X11" = 'yes' ]; then
-	echo '#define USE_X11' >>spnav_config.h
-	echo '' >>spnav_config.h
+	echo '#define USE_X11' >>$cfghdr
+	echo '' >>$cfghdr
 fi
-echo '#endif	/* SPNAV_CONFIG_H_ */' >>spnav_config.h
+echo '#endif	/* SPNAV_CONFIG_H_ */' >>$cfghdr
 
 #done
 echo ''

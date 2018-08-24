@@ -105,7 +105,7 @@ int spnav_open(void)
 	}
 
 	proto = 0;
-	if(conn_unix(s, SPNAVEXT_SOCK_PATH) == -1) {
+	if(conn_unix(s, SPNAV1_SOCK_PATH) == -1) {
 		proto = 1;
 		if(conn_unix(s, SPNAV_SOCK_PATH) == -1) {
 			perror("failed to connect");
