@@ -179,39 +179,6 @@ int spnav_close(void)
 
 
 #ifdef USE_X11
-int spnav_x11_window(Window win)
-{
-	int (*prev_xerr_handler)(Display*, XErrorEvent*);
-	XEvent xev;
-	Window daemon_win;
-
-	if(!IS_OPEN) {
-		return -1;
-	}
-
-	if(!(daemon_win = get_daemon_window(dpy))) {
-		return -1;
-	}
-
-	prev_xerr_handler = XSetErrorHandler(catch_badwin);
-
-	xev.type = ClientMessage;
-	xev.xclient.send_event = False;
-	xev.xclient.display = dpy;
-	xev.xclient.window = win;
-	xev.xclient.message_type = command_event;
-	xev.xclient.format = 16;
-	xev.xclient.data.s[0] = ((unsigned int)win & 0xffff0000) >> 16;
-	xev.xclient.data.s[1] = (unsigned int)win & 0xffff;
-	xev.xclient.data.s[2] = CMD_APP_WINDOW;
-
-	XSendEvent(dpy, daemon_win, False, 0, &xev);
-	XSync(dpy, False);
-
-	XSetErrorHandler(prev_xerr_handler);
-	return 0;
-}
-
 static int x11_sensitivity(double sens)
 {
 	int (*prev_xerr_handler)(Display*, XErrorEvent*);
@@ -503,39 +470,6 @@ int spnav_remove_events(int type)
 }
 
 #ifdef USE_X11
-int spnav_x11_event(const XEvent *xev, spnav_event *event)
-{
-	int i;
-	int xmsg_type;
-
-	if(xev->type != ClientMessage) {
-		return 0;
-	}
-
-	xmsg_type = xev->xclient.message_type;
-
-	if(xmsg_type != motion_event && xmsg_type != button_press_event &&
-			xmsg_type != button_release_event) {
-		return 0;
-	}
-
-	if(xmsg_type == motion_event) {
-		event->type = SPNAV_EVENT_MOTION;
-		event->motion.data = &event->motion.x;
-
-		for(i=0; i<6; i++) {
-			event->motion.data[i] = xev->xclient.data.s[i + 2];
-		}
-		event->motion.period = xev->xclient.data.s[8];
-	} else {
-		event->type = SPNAV_EVENT_BUTTON;
-		event->button.press = xmsg_type == button_press_event ? 1 : 0;
-		event->button.bnum = xev->xclient.data.s[2];
-	}
-	return event->type;
-}
-
-
 static Window get_daemon_window(Display *dpy)
 {
 	Window win, root_win;
@@ -562,7 +496,7 @@ static Window get_daemon_window(Display *dpy)
 	return win;
 }
 
-int catch_badwin(Display *dpy, XErrorEvent *err)
+static int catch_badwin(Display *dpy, XErrorEvent *err)
 {
 	char buf[256];
 

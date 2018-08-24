@@ -42,6 +42,7 @@ struct input_src {
 
 	int (*pending)(void);
 	int (*process)(void);
+	int (*dropev)(int);
 
 	int (*set_flt)(double);
 	int (*set_int)(int);
