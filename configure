@@ -20,6 +20,10 @@ for arg; do
 		value=`echo $arg | sed 's/--prefix=//'`
 		PREFIX=${value:-$prefix}
 		;;
+	--libdir=*)
+		value=`echo $arg | sed 's/--libdir=//'`
+		libdir=${value:-$libdir}
+		;;
 	
 	--enable-opt)
 		OPT=yes;;
@@ -40,6 +44,7 @@ for arg; do
 		echo 'usage: ./configure [options]'
 		echo 'options:'
 		echo '  --prefix=<path>: installation path (default: /usr/local)'
+		echo '  --libdir=<path>: library path (default: lib)'
 		echo '  --enable-x11: enable X11 communication mode (default)'
 		echo '  --disable-x11: disable X11 communication mode'
 		echo '  --enable-opt: enable speed optimizations (default)'
