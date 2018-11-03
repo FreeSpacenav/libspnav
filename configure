@@ -92,7 +92,9 @@ fi
 
 if [ "$X11" = 'yes' ]; then
 	echo 'magellan_obj = spnav_magellan.o' >>Makefile
-	echo 'xlib = -lX11' >>Makefile
+	echo "xlib = $(pkg-config --libs-only-l x11)" >>Makefile
+	echo "xlibL = $(pkg-config --libs-only-L x11)" >>Makefile
+	echo "xlibI = $(pkg-config --cflags-only-I x11)" >>Makefile
 fi
 
 cat "$srcdir/Makefile.in" >>Makefile

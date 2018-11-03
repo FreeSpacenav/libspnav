@@ -5,8 +5,8 @@ hdr = spnav.h spnav_magellan.h spnav_config.h
 name = spnav
 lib_a = lib$(name).a
 
-incpaths = -I. -I/usr/local/include -I/usr/X11R6/include
-libpaths = -L/usr/local/lib -L/usr/X11R6/lib
+incpaths = -I. $(xlibI)
+libpaths = $(xlibL)
 
 CC = gcc
 AR = ar
