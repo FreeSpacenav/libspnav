@@ -6,6 +6,7 @@ PREFIX=/usr/local
 OPT=yes
 DBG=yes
 X11=yes
+M32=no
 
 srcdir="`dirname "$0"`"
 libdir=lib
@@ -20,7 +21,12 @@ for arg; do
 		value=`echo $arg | sed 's/--prefix=//'`
 		PREFIX=${value:-$prefix}
 		;;
-	
+		
+	--enable-m32*)
+		M32=yes;;
+	--disable-m32*)
+		M32=no;;
+		
 	--enable-opt)
 		OPT=yes;;
 	--disable-opt)
@@ -74,7 +80,6 @@ echo 'creating Makefile ...'
 echo "PREFIX = $PREFIX" >Makefile
 echo "srcdir = $srcdir" >>Makefile
 echo "libdir = $libdir" >>Makefile
-
 if [ -n "$CFLAGS" ]; then
 	echo "user_cflags = $CFLAGS" >>Makefile
 fi
@@ -93,6 +98,10 @@ fi
 if [ "$X11" = 'yes' ]; then
 	echo 'magellan_obj = spnav_magellan.o' >>Makefile
 	echo 'xlib = -lX11' >>Makefile
+fi
+
+if [ "$M32" = 'yes' ]; then
+	echo 'm32 = -m32' >>Makefile
 fi
 
 cat "$srcdir/Makefile.in" >>Makefile

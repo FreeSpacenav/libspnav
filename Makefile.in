@@ -8,7 +8,7 @@ lib_a = lib$(name).a
 incpaths = -I. -I/usr/local/include -I/usr/X11R6/include
 libpaths = -L/usr/local/lib -L/usr/X11R6/lib
 
-CC = gcc
+CC = gcc $(m32)
 AR = ar
 CFLAGS = $(opt) $(dbg) -std=c89 $(pic) -pedantic -Wall -fno-strict-aliasing $(incpaths) $(user_cflags)
 LDFLAGS = $(libpaths) $(user_ldflags) $(xlib)
