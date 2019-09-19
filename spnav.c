@@ -299,7 +299,7 @@ static int event_pending(int s)
 static int read_event(int s, spnav_event *event)
 {
 	int i, rd;
-	int data[8];
+	int data[9];
 
 	/* if we have a queued event, deliver that one */
 	if(ev_queue->next) {
@@ -329,16 +329,18 @@ static int read_event(int s, spnav_event *event)
 		return 0;
 	}
 	event->type = data[0] ? SPNAV_EVENT_BUTTON : SPNAV_EVENT_MOTION;
+	event->dev = data[1];
 
 	if(event->type == SPNAV_EVENT_MOTION) {
 		event->motion.data = &event->motion.x;
 		for(i=0; i<6; i++) {
-			event->motion.data[i] = data[i + 1];
+			event->motion.data[i] = data[i + 2];
 		}
-		event->motion.period = data[7];
+		event->motion.period = data[8];
 	} else {
 		event->button.press = data[0] == 1 ? 1 : 0;
-		event->button.bnum = data[1];
+		event->dev = data[1];
+		event->button.bnum = data[2];
 	}
 
 	return event->type;
