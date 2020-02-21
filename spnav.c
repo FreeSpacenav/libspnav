@@ -1,6 +1,6 @@
 /*
 This file is part of libspnav, part of the spacenav project (spacenav.sf.net)
-Copyright (C) 2007-2010 John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2007-2020 John Tsiombikas <nuclear@member.fsf.org>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -96,7 +96,6 @@ int spnav_open(void)
 
 
 	if(connect(s, (struct sockaddr*)&addr, sizeof addr) == -1) {
-		perror("connect failed");
 		close(s);
 		return -1;
 	}
@@ -557,7 +556,7 @@ int catch_badwin(Display *dpy, XErrorEvent *err)
 		/* do nothing? */
 	} else {
 		XGetErrorText(dpy, err->error_code, buf, sizeof buf);
-		fprintf(stderr, "Caught unexpected X error: %s\n", buf);
+		fprintf(stderr, "libspnav: caught unexpected X error: %s\n", buf);
 	}
 	return 0;
 }
