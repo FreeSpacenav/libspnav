@@ -27,8 +27,6 @@ OF SUCH DAMAGE.
 #ifndef SPACENAV_H_
 #define SPACENAV_H_
 
-#include <spnav_config.h>
-
 #ifdef USE_X11
 #include <X11/Xlib.h>
 #endif
