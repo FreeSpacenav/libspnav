@@ -54,8 +54,8 @@ install: $(lib_a) $(lib_so) $(hdr)
 	cp $(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so)
 	[ -n "$(soname)" ] && \
 		rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) && \
-		ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) && \
-		ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) || \
+		ln -s $(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) && \
+		ln -s $(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) || \
 		true
 	for h in $(hdr); do cp -p $(srcdir)/$$h $(DESTDIR)$(PREFIX)/include/; done
 
