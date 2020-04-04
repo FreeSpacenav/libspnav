@@ -15,17 +15,19 @@
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include <spnav.h>
+#include <signal.h>
 #include "vmath.h"
 
 #define SQ(x)	((x) * (x))
 
 int create_gfx(int xsz, int ysz);
+void destroy(void);
 void destroy_gfx(void);
 void set_window_title(const char *title);
 void redraw(void);
 void draw_cube(void);
-int handle_event(XEvent *xev);
-
+int handle_x11_event(const XEvent *const xev);
+void handle_spnav_event(const spnav_event *const spev);
 
 Display *dpy;
 Atom wm_prot, wm_del_win;
@@ -36,23 +38,36 @@ vec3_t pos = {0, 0, -6};
 quat_t rot = {0, 0, 0, 1};	/* that's 1 + 0i + 0j + 0k */
 
 int redisplay;
+void sig(int s)
+{
+	destroy();
+	exit(0);
+}
 
 int main(void)
 {
+	signal(SIGINT, sig);
+
 	if(!(dpy = XOpenDisplay(0))) {
 		fprintf(stderr, "failed to connect to the X server");
 		return 1;
 	}
 
-	if(create_gfx(512, 512) == -1) {
+#if defined(BUILD_X11)
+	if(spnav_x11_open(dpy, win) == -1) {
+		fprintf(stderr, "[BUILD_X11] failed to connect to the space navigator daemon\n");
 		return 1;
 	}
+#elif defined(BUILD_UNIX)
+	if(spnav_open()==-1) {
+		fprintf(stderr, "[BUILD_UNIX] failed to connect to the space navigator daemon\n");
+		return 1;
+	}
+#else
+#error Unknown build type!
+#endif
 
-	/* XXX: This actually registers our window with the driver for receiving
-	 * motion/button events through the 3dxsrv-compatible X11 protocol.
-	 */
-	if(spnav_x11_open(dpy, win) == -1) {
-		fprintf(stderr, "failed to connect to the space navigator daemon\n");
+	if(create_gfx(512, 512) == -1) {
 		return 1;
 	}
 
@@ -60,15 +75,26 @@ int main(void)
 	glEnable(GL_CULL_FACE);
 
 	for(;;) {
-		XEvent xev;
-		XNextEvent(dpy, &xev);
+		while(XPending(dpy)) {
+			XEvent xev;
+			spnav_event spev;
 
-		if(handle_event(&xev) != 0) {
-			destroy_gfx();
-			XCloseDisplay(dpy);
-			return 0;
+			XNextEvent(dpy, &xev);
+			if (spnav_x11_event(&xev, &spev)) {
+				handle_spnav_event(&spev);
+			} else {
+				if (handle_x11_event(&xev) != 0) {
+					destroy();
+					return 0;
+				}
+			}
 		}
-
+#if defined(BUILD_UNIX)
+		spnav_event spev;
+		while(spnav_poll_event(&spev)) {
+			handle_spnav_event(&spev);
+		}
+#endif
 		if(redisplay) {
 			redraw();
 			redisplay = 0;
@@ -146,6 +172,15 @@ int create_gfx(int xsz, int ysz)
 	XFlush(dpy);
 
 	return 0;
+}
+
+void destroy(void)
+{
+#if defined(BUILD_UNIX)
+	spnav_close();
+#endif
+	destroy_gfx();
+	XCloseDisplay(dpy);
 }
 
 void destroy_gfx(void)
@@ -231,11 +266,10 @@ void draw_cube(void)
 	glEnd();
 }
 
-int handle_event(XEvent *xev)
+int handle_x11_event(const XEvent *const xev)
 {
 	static int win_mapped;
 	KeySym sym;
-	spnav_event spev;
 
 	switch(xev->type) {
 	case MapNotify:
@@ -253,36 +287,7 @@ int handle_event(XEvent *xev)
 		break;
 
 	case ClientMessage:
-		/* XXX check if the event is a spacenav event */
-		if(spnav_x11_event(xev, &spev)) {
-			/* if so deal with motion and button events */
-			if(spev.type == SPNAV_EVENT_MOTION) {
-				/* apply axis/angle rotation to the quaternion */
-				if(spev.motion.rx || spev.motion.ry || spev.motion.rz) {
-					float axis_len = sqrt(SQ(spev.motion.rx) + SQ(spev.motion.ry) + SQ(spev.motion.rz));
-					rot = quat_rotate(rot, axis_len * 0.001, -spev.motion.rx / axis_len,
-							-spev.motion.ry / axis_len, spev.motion.rz / axis_len);
-				}
-
-				/* add translation */
-				pos.x += spev.motion.x * 0.001;
-				pos.y += spev.motion.y * 0.001;
-				pos.z -= spev.motion.z * 0.001;
-
-				redisplay = 1;
-			} else {
-				/* on button press, reset the cube */
-				if(spev.button.press) {
-					pos = v3_cons(0, 0, -6);
-					rot = quat_cons(1, 0, 0, 0);
-
-					redisplay = 1;
-				}
-			}
-			/* finally remove any other queued motion events */
-			spnav_remove_events(SPNAV_EVENT_MOTION);
-
-		} else if(xev->xclient.message_type == wm_prot) {
+		if(xev->xclient.message_type == wm_prot) {
 			if(xev->xclient.data.l[0] == wm_del_win) {
 				return 1;
 			}
@@ -313,4 +318,32 @@ int handle_event(XEvent *xev)
 		break;
 	}
 	return 0;
+}
+
+void handle_spnav_event(const spnav_event *const spev) {
+	if(spev->type == SPNAV_EVENT_MOTION) {
+		/* apply axis/angle rotation to the quaternion */
+		if(spev->motion.rx || spev->motion.ry || spev->motion.rz) {
+			float axis_len = sqrt(SQ(spev->motion.rx) + SQ(spev->motion.ry) + SQ(spev->motion.rz));
+			rot = quat_rotate(rot, axis_len * 0.001, -spev->motion.rx / axis_len,
+					-spev->motion.ry / axis_len, spev->motion.rz / axis_len);
+		}
+
+		/* add translation */
+		pos.x += spev->motion.x * 0.001;
+		pos.y += spev->motion.y * 0.001;
+		pos.z -= spev->motion.z * 0.001;
+
+		redisplay = 1;
+	} else {
+		/* on button press, reset the cube */
+		if(spev->button.press) {
+			pos = v3_cons(0, 0, -6);
+			rot = quat_cons(1, 0, 0, 0);
+
+			redisplay = 1;
+		}
+	}
+	/* finally remove any other queued motion events */
+	spnav_remove_events(SPNAV_EVENT_MOTION);
 }
