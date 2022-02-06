@@ -18,7 +18,7 @@ ifeq ($(shell uname -s), Darwin)
 	shared = -dynamiclib
 else
 	so_major = 0
-	so_minor = 1
+	so_minor = 2
 	devlink = lib$(name).so
 	soname = $(devlink).$(so_major)
 	lib_so = $(soname).$(so_minor)
@@ -54,8 +54,9 @@ install: $(lib_a) $(lib_so) $(hdr)
 	cp $(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so)
 	[ -n "$(soname)" ] && \
 		rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) && \
-		ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(lib_so) $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) && \
-		ln -s $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) || \
+		cd $(DESTDIR)$(PREFIX)/$(libdir) && \
+		ln -s $(lib_so) $(soname) && \
+		ln -s $(soname) $(devlink) || \
 		true
 	for h in $(hdr); do cp -p $(srcdir)/$$h $(DESTDIR)$(PREFIX)/include/; done
 

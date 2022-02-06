@@ -1,6 +1,6 @@
 /*
 This file is part of libspnav, part of the spacenav project (spacenav.sf.net)
-Copyright (C) 2007-2020 John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2007-2022 John Tsiombikas <nuclear@member.fsf.org>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -27,6 +27,7 @@ OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -70,11 +71,22 @@ static struct event_node *ev_queue, *ev_queue_tail;
 /* AF_UNIX socket used for alternative communication with daemon */
 static int sock = -1;
 
+static int connect_afunix(int s, const char *path)
+{
+	struct sockaddr_un addr = {0};
+
+	addr.sun_family = AF_UNIX;
+	strncpy(addr.sun_path, path, sizeof addr.sun_path - 1);
+
+	return connect(s, (struct sockaddr*)&addr, sizeof addr);
+}
 
 int spnav_open(void)
 {
 	int s;
-	struct sockaddr_un addr;
+	char *path;
+	FILE *fp;
+	char buf[256], *ptr;
 
 	if(IS_OPEN) {
 		return -1;
@@ -90,16 +102,38 @@ int spnav_open(void)
 		return -1;
 	}
 
-	memset(&addr, 0, sizeof addr);
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, SPNAV_SOCK_PATH, sizeof(addr.sun_path));
+	/* heed SPNAV_SOCKET environment variable if it's defined */
+	if((path = getenv("SPNAV_SOCKET"))) {
+		if(connect_afunix(s, path) == 0) goto success;
+	}
 
+	/* hacky config file parser, to look for socket = <path> in /etc/spnavrc */
+	if((fp = fopen("/etc/spnavrc", "rb"))) {
+		path = 0;
+		while(fgets(buf, sizeof buf, fp)) {
+			ptr = buf;
+			while(*ptr && isspace(*ptr)) ptr++;
+			if(!*ptr || *ptr == '#') continue;	/* comment or empty line */
 
-	if(connect(s, (struct sockaddr*)&addr, sizeof addr) == -1) {
+			if(memcmp(ptr, "socket", 6) == 0 && (ptr = strchr(ptr, '='))) {
+				while(*++ptr && isspace(*ptr));
+				if(!*ptr) continue;
+				path = ptr;
+				ptr += strlen(ptr) - 1;
+				while(ptr > path && isspace(*ptr)) *ptr-- = 0;
+				break;
+			}
+		}
+		if(path && connect_afunix(s, path) == 0) goto success;
+	}
+
+	/* by default use SPNAV_SOCK_PATH (see top of this file) */
+	if(connect_afunix(s, SPNAV_SOCK_PATH) == -1) {
 		close(s);
 		return -1;
 	}
 
+success:
 	sock = s;
 	return 0;
 }
