@@ -82,7 +82,7 @@ int spnav_close(void);
  * If the X11 mode is used, the socket used to communicate with the X server is
  * returned, so the result of this function is always reliable.
  * If AF_UNIX mode is used, the fd of the socket is returned or -1 if
- * no connection is open / failure occured.
+ * no connection is open / failure occurred.
  */
 int spnav_fd(void);
 
