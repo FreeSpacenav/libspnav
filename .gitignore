@@ -6,3 +6,6 @@
 *.so.*
 spnav_config.h
 Makefile
+examples/cube/cube
+examples/simple/simple_af_unix
+examples/simple/simple_x11
