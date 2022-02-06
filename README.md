@@ -27,7 +27,7 @@ Configure, make, and make install as usual.
 License
 -------
 
-Copyright (C) 2007-2018 John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2007-2022 John Tsiombikas <nuclear@member.fsf.org>
 
 libspnav is free software. Feel free to use, modify, and/or redistibute it
 under the terms of the 3-clause BSD license. See LICENSE for details.
