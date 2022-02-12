@@ -663,7 +663,7 @@ static int wait_resp(void *buf, int sz, int timeout_ms)
 
 static int request(int req, struct reqresp *rr, int timeout_ms)
 {
-	if(sock < 0) return -1;
+	if(sock < 0 || proto < 1) return -1;
 
 	req |= REQ_TAG;
 	rr->type = req;
