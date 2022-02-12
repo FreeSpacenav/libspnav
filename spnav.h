@@ -166,6 +166,47 @@ int spnav_dev_buttons(void);
 int spnav_dev_axes(void);
 
 
+/* configuration API
+ * -----------------
+ * This API is mostly targeted towards configuration management tools (like
+ * spnavcfg). Normal clients should avoid changing the spacenavd configuration.
+ * They should use the non-persistent client-specific settings instead.
+ *
+ * All functions with return 0 on success, -1 on failure, unless noted otherwise
+ */
+
+/* Set the global sensitivity.
+ * cfgfile option: sensitivity
+ */
+int spnav_cfg_set_sens(float s);
+float spnav_cfg_get_sens(void);	/* returns the sensitivity or <0.0 on error */
+
+/* Set the per-axis sensitivity for all 6 axes. svec should point to an array of
+ * 6 floats.
+ * cfgfile options: sensitivity-translation-[x|y|z], sensitivity-rotation-[x|y|z]
+ */
+int spnav_cfg_set_axis_sens(const float *svec);
+int spnav_cfg_get_axis_sens(float *svecret);  /* writes 6 floats through svec */
+
+/* Set the deadzone for all 6 axes. dead should point to an array of 6 ints.
+ * cfgfile options: dead-zone-translation-[x|y|z], dead-zone-rotation-[x|y|z]
+ */
+int spnav_cfg_set_deadzones(const int *dead);
+int spnav_cfg_get_deadzones(int *deadret);	/* writes 6 ints through dead */
+
+/* Set the axis invert state
+ * 0: normal, 1: inverted. order: MSB [ ... RZ|RY|RX|TZ|TY|TX] LSB
+ * cfgfile options: invert-trans, invert-rot
+ */
+int spnav_cfg_set_invert(int invbits);
+int spnav_cfg_get_invert(void);	/* returns invert bits, -1 on error */
+
+/* Control device LED
+ * 0: off, 1: on, 2: auto
+ * cfgfile option: led
+ */
+int spnav_cfg_set_led(int state);
+int spnav_cfg_get_led(void);	/* returns led setting, -1 on error */
 
 #ifdef __cplusplus
 }
