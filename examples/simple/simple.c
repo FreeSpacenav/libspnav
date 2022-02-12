@@ -4,6 +4,10 @@
 #include <X11/Xlib.h>
 #include <spnav.h>
 
+#if defined(BUILD_AF_UNIX)
+void print_dev_info(void);
+#endif
+
 void sig(int s)
 {
 	spnav_close();
@@ -42,9 +46,11 @@ int main(void)
 
 #elif defined(BUILD_AF_UNIX)
 	if(spnav_open()==-1) {
-	  	fprintf(stderr, "failed to connect to the space navigator daemon\n");
+		fprintf(stderr, "failed to connect to the space navigator daemon\n");
 		return 1;
 	}
+
+	print_dev_info();
 #else
 #error Unknown build type!
 #endif
@@ -67,3 +73,25 @@ int main(void)
 	spnav_close();
 	return 0;
 }
+
+#if defined(BUILD_AF_UNIX)
+void print_dev_info(void)
+{
+	int proto;
+
+	if((proto = spnav_protocol()) == -1) {
+		fprintf(stderr, "failed to query protocol version\n");
+		return;
+	}
+	printf("spacenav AF_UNIX protocol version: %d\n", proto);
+
+	if(proto >= 1) {
+		printf("Device: %s\n", spnav_dev_name(0, 0));
+		printf("Path: %s\n", spnav_dev_path(0, 0));
+		printf("Buttons: %d\n", spnav_dev_buttons());
+		printf("Axes: %d\n", spnav_dev_axes());
+	}
+
+	putchar('\n');
+}
+#endif

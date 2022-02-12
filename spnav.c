@@ -36,7 +36,11 @@ OF SUCH DAMAGE.
 #include <sys/un.h>
 #include <sys/select.h>
 #include "spnav.h"
+#include "proto.h"
 
+/* default timeout for request responses*/
+#define TIMEOUT	256
+/* default socket path */
 #define SPNAV_SOCK_PATH "/var/run/spnav.sock"
 
 #ifdef USE_X11
@@ -45,6 +49,10 @@ OF SUCH DAMAGE.
 
 static Window get_daemon_window(Display *dpy);
 static int catch_badwin(Display *dpy, XErrorEvent *err);
+
+static int wait_resp(void *buf, int sz, int timeout_ms);
+static int request(int req, struct reqresp *rr, int timeout_ms);
+
 
 static Display *dpy;
 static Window app_win;
@@ -70,6 +78,7 @@ static struct event_node *ev_queue, *ev_queue_tail;
 
 /* AF_UNIX socket used for alternative communication with daemon */
 static int sock = -1;
+static int proto;
 
 static int connect_afunix(int s, const char *path)
 {
@@ -83,7 +92,7 @@ static int connect_afunix(int s, const char *path)
 
 int spnav_open(void)
 {
-	int s;
+	int s, cmd;
 	char *path;
 	FILE *fp;
 	char buf[256], *ptr;
@@ -135,6 +144,20 @@ int spnav_open(void)
 
 success:
 	sock = s;
+	proto = 0;
+
+	/* send protocol change request and wait for a response.
+	 * if we time out, assume we're talking with an old version of spacenavd,
+	 * which took our packet as a sensitivity value, so restore sensitivity to
+	 * 1.0 and continue with protocol v0
+	 */
+	cmd = REQ_TAG | REQ_CHANGE_PROTO | MAX_PROTO_VER;
+	write(s, &cmd, sizeof cmd);
+	if(wait_resp(&cmd, sizeof cmd, TIMEOUT) == -1) {
+		spnav_sensitivity(1.0f);
+	} else {
+		proto = cmd & 0xff;
+	}
 	return 0;
 }
 
@@ -269,24 +292,33 @@ static int x11_sensitivity(double sens)
 
 int spnav_sensitivity(double sens)
 {
+	struct reqresp rr;
+
 #ifdef USE_X11
 	if(dpy) {
 		return x11_sensitivity(sens);
 	}
 #endif
 
-	if(sock) {
-		ssize_t bytes;
-		float fval = sens;
+	if(proto == 0) {
+		if(sock) {
+			ssize_t bytes;
+			float fval = sens;
 
-		while((bytes = write(sock, &fval, sizeof fval)) <= 0 && errno == EINTR);
-		if(bytes <= 0) {
-			return -1;
+			while((bytes = write(sock, &fval, sizeof fval)) <= 0 && errno == EINTR);
+			if(bytes <= 0) {
+				return -1;
+			}
+			return 0;
 		}
-		return 0;
+		return -1;
 	}
 
-	return -1;
+	rr.data[0] = *(int*)&sens;
+	if(request(REQ_SET_SENS, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return 0;
 }
 
 int spnav_fd(void)
@@ -595,3 +627,135 @@ int catch_badwin(Display *dpy, XErrorEvent *err)
 	return 0;
 }
 #endif
+
+static int wait_resp(void *buf, int sz, int timeout_ms)
+{
+	int res;
+	fd_set rdset;
+	struct timeval tv;
+	char *ptr;
+
+	if(timeout_ms) {
+		FD_ZERO(&rdset);
+		FD_SET(sock, &rdset);
+
+		if(timeout_ms > 0) {
+			tv.tv_sec = timeout_ms / 1000;
+			tv.tv_usec = (timeout_ms % 1000) * 1000;
+		}
+
+		while((res = select(sock + 1, &rdset, 0, 0, timeout_ms < 0 ? 0 : &tv)) == -1 && errno == EINTR);
+	}
+
+	if(!timeout_ms || (res > 0 && FD_ISSET(sock, &rdset))) {
+		ptr = buf;
+		while(sz > 0) {
+			if((res = read(sock, ptr, sz)) <= 0 && errno != EINTR) {
+				return -1;
+			}
+			ptr += res;
+			sz -= res;
+		}
+		return 0;
+	}
+	return -1;
+}
+
+static int request(int req, struct reqresp *rr, int timeout_ms)
+{
+	if(sock < 0) return -1;
+
+	req |= REQ_TAG;
+	rr->type = req;
+
+	write(sock, rr, sizeof *rr);
+	if(wait_resp(rr, sizeof *rr, TIMEOUT) == -1) {
+		return -1;
+	}
+
+	if(rr->type != req) return -1;
+	return 0;
+}
+
+
+
+int spnav_protocol(void)
+{
+	return proto;
+}
+
+const char *query_str(char *buf, int bufsz, int req)
+{
+	struct reqresp rr = {0};
+	static char strbuf[512];
+	char *str;
+
+	if(!buf) {
+		buf = strbuf;
+		bufsz = sizeof strbuf;
+	}
+
+	/* if we get a huge name, something is probably wrong, assume it's a mistake */
+	if(request(req, &rr, TIMEOUT) == -1 || rr.data[6] != 0 || rr.data[0] >= 512 || rr.data[0] <= 0) {
+		return 0;
+	}
+
+	if(bufsz < rr.data[0]) {
+		if(!(str = malloc(rr.data[0]))) {
+			str = strbuf;
+			bufsz = sizeof strbuf;
+		}
+	} else {
+		str = buf;
+	}
+
+	if(wait_resp(str, rr.data[0], TIMEOUT) == -1) {
+		if(str != strbuf && str != buf) {
+			free(str);
+		}
+		return 0;
+	}
+	str[rr.data[0]] = 0;
+
+	if(str != buf) {
+		strncpy(buf, str, bufsz);
+		buf[bufsz - 1] = 0;
+	}
+
+	if(str != strbuf && str != buf) {
+		free(str);
+	}
+	return buf;
+}
+
+const char *spnav_dev_name(char *buf, int bufsz)
+{
+	if(proto < 1) return 0;
+	return query_str(buf, bufsz, REQ_DEV_NAME);
+}
+
+const char *spnav_dev_path(char *buf, int bufsz)
+{
+	if(proto < 1) return 0;
+	return query_str(buf, bufsz, REQ_DEV_PATH);
+}
+
+int spnav_dev_buttons(void)
+{
+	struct reqresp rr = {0};
+
+	if(proto < 1 || request(REQ_DEV_NBUTTONS, &rr, TIMEOUT) == -1 || rr.data[6] != 0) {
+		return 2;	/* default */
+	}
+	return rr.data[0];
+}
+
+int spnav_dev_axes(void)
+{
+	struct reqresp rr = {0};
+
+	if(proto < 1 || request(REQ_DEV_NAXES, &rr, TIMEOUT) == -1 || rr.data[6] != 0) {
+		return 6;	/* default */
+	}
+	return rr.data[0];
+}

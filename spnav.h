@@ -130,6 +130,43 @@ int spnav_x11_window(Window win);
 int spnav_x11_event(const XEvent *xev, spnav_event *event);
 #endif
 
+/* returns the protocol version understood by the running spacenavd
+ * -1 on error, or if the connection was established using the X11
+ * protocol (spnav_x11_open).
+ */
+int spnav_protocol(void);
+
+
+/*
+ * Everything from this point on will either fail, or return hardcoded default
+ * values when communicating over the X11 protocol (spnav_x11_open), or when
+ * using a spacenav protocol version less than 1. See spnav_protocol().
+ */
+
+/* TODO multi-device support and device selection not implemented yet
+int spnav_num_devices(void);
+int spnav_select_device(int dev);
+*/
+
+/* Returns a descriptive device name.
+ * The name is copied into buf, and a pointer to it is returned. No more than
+ * bufsz bytes are written including the zero terminator.
+ * buf can be null, in which case a pointer to a static string is returned.
+ */
+const char *spnav_dev_name(char *buf, int bufsz);
+
+/* Returns the path to the device file if applicable.
+ * Usage same as spnav_dev_name.
+ */
+const char *spnav_dev_path(char *buf, int bufsz);
+
+/* returns the number of buttons (defaults to 2 if unable to query) */
+int spnav_dev_buttons(void);
+/* returns the number of axes (defaults to 6 if unable to query) */
+int spnav_dev_axes(void);
+
+
+
 #ifdef __cplusplus
 }
 #endif
