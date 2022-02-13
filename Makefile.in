@@ -18,7 +18,7 @@ ifeq ($(shell uname -s), Darwin)
 	shared = -dynamiclib
 else
 	so_major = 0
-	so_minor = 2
+	so_minor = 3
 	devlink = lib$(name).so
 	soname = $(devlink).$(so_major)
 	lib_so = $(soname).$(so_minor)
