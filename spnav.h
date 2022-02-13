@@ -143,6 +143,9 @@ int spnav_protocol(void);
  * using a spacenav protocol version less than 1. See spnav_protocol().
  */
 
+/* Set client name */
+int spnav_client_name(const char *name);
+
 /* TODO multi-device support and device selection not implemented yet
 int spnav_num_devices(void);
 int spnav_select_device(int dev);
@@ -175,6 +178,14 @@ int spnav_dev_axes(void);
  * All functions with return 0 on success, -1 on failure, unless noted otherwise
  */
 
+enum { SPNAV_CFG_LED_OFF, SPNAV_CFG_LED_ON, SPNAV_CFG_LED_AUTO };
+enum {
+	SPNAV_BNACT_NONE,
+	SPNAV_BNACT_SENS_RESET, SPNAV_BNACT_SENS_INC, SPNAV_BNACT_SENS_DEC,
+	SPNAV_BNACT_DISABLE_ROT, SPNAV_BNACT_DISABLE_TRANS,
+	SPNAV_MAX_BNACT
+};
+
 /* Set the global sensitivity.
  * cfgfile option: sensitivity
  */
@@ -188,11 +199,11 @@ float spnav_cfg_get_sens(void);	/* returns the sensitivity or <0.0 on error */
 int spnav_cfg_set_axis_sens(const float *svec);
 int spnav_cfg_get_axis_sens(float *svecret);  /* writes 6 floats through svec */
 
-/* Set the deadzone for all 6 axes. dead should point to an array of 6 ints.
+/* Set deadzone for a device axis
  * cfgfile options: dead-zone-translation-[x|y|z], dead-zone-rotation-[x|y|z]
  */
-int spnav_cfg_set_deadzones(const int *dead);
-int spnav_cfg_get_deadzones(int *deadret);	/* writes 6 ints through dead */
+int spnav_cfg_set_deadzone(int axis, int delta);
+int spnav_cfg_get_deadzone(int axis);	/* returns deadzone, -1 on error */
 
 /* Set the axis invert state
  * 0: normal, 1: inverted. order: MSB [ ... RZ|RY|RX|TZ|TY|TX] LSB
@@ -201,8 +212,20 @@ int spnav_cfg_get_deadzones(int *deadret);	/* writes 6 ints through dead */
 int spnav_cfg_set_invert(int invbits);
 int spnav_cfg_get_invert(void);	/* returns invert bits, -1 on error */
 
+int spnav_cfg_set_axismap(int devaxis, int map);
+int spnav_cfg_get_axismap(int devaxis);
+
+int spnav_cfg_set_bnmap(int devbn, int map);
+int spnav_cfg_get_bnmap(int devbn);
+
+int spnav_cfg_set_bnaction(int bn, int act);
+int spnav_cfg_get_bnaction(int bn);
+
+int spnav_cfg_set_kbmap(int bn, int key);
+int spnav_cfg_get_kbmap(int bn);
+
 /* Control device LED
- * 0: off, 1: on, 2: auto
+ * SPNAV_CFG_LED_OFF | SPNAV_CFG_LED_ON | SPNAV_CFG_LED_AUTO
  * cfgfile option: led
  */
 int spnav_cfg_set_led(int state);

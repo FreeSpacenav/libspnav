@@ -673,7 +673,8 @@ static int request(int req, struct reqresp *rr, int timeout_ms)
 		return -1;
 	}
 
-	if(rr->type != req) return -1;
+	/* XXX assuming data[6] is always status */
+	if(rr->type != req || rr->data[6] != 0) return -1;
 	return 0;
 }
 
@@ -682,6 +683,18 @@ static int request(int req, struct reqresp *rr, int timeout_ms)
 int spnav_protocol(void)
 {
 	return proto;
+}
+
+int spnav_client_name(const char *name)
+{
+	struct reqresp rr = {0};
+	int len = strlen(name);
+	if(len > sizeof rr.data) {
+		len = sizeof rr.data;
+	}
+	memcpy(rr.data, name, len);
+
+	return request(REQ_SET_NAME, &rr, TIMEOUT);
 }
 
 const char *query_str(char *buf, int bufsz, int req)
@@ -730,21 +743,18 @@ const char *query_str(char *buf, int bufsz, int req)
 
 const char *spnav_dev_name(char *buf, int bufsz)
 {
-	if(proto < 1) return 0;
 	return query_str(buf, bufsz, REQ_DEV_NAME);
 }
 
 const char *spnav_dev_path(char *buf, int bufsz)
 {
-	if(proto < 1) return 0;
 	return query_str(buf, bufsz, REQ_DEV_PATH);
 }
 
 int spnav_dev_buttons(void)
 {
 	struct reqresp rr = {0};
-
-	if(proto < 1 || request(REQ_DEV_NBUTTONS, &rr, TIMEOUT) == -1 || rr.data[6] != 0) {
+	if(request(REQ_DEV_NBUTTONS, &rr, TIMEOUT) == -1) {
 		return 2;	/* default */
 	}
 	return rr.data[0];
@@ -753,9 +763,187 @@ int spnav_dev_buttons(void)
 int spnav_dev_axes(void)
 {
 	struct reqresp rr = {0};
-
-	if(proto < 1 || request(REQ_DEV_NAXES, &rr, TIMEOUT) == -1 || rr.data[6] != 0) {
+	if(request(REQ_DEV_NAXES, &rr, TIMEOUT) == -1) {
 		return 6;	/* default */
+	}
+	return rr.data[0];
+}
+
+
+
+int spnav_cfg_set_sens(float s)
+{
+	struct reqresp rr = {0};
+	rr.data[0] = *(int*)&s;
+	return request(REQ_SCFG_SENS, &rr, TIMEOUT);
+}
+
+float spnav_cfg_get_sens(void)
+{
+	struct reqresp rr = {0};
+	if(request(REQ_GCFG_SENS, &rr, TIMEOUT) == -1) {
+		return -1.0f;
+	}
+	return *(float*)&rr.data[0];
+}
+
+int spnav_cfg_set_axis_sens(const float *svec)
+{
+	struct reqresp rr;
+	memcpy(rr.data, svec, 6 * sizeof *svec);
+	return request(REQ_SCFG_SENS_AXIS, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_axis_sens(float *svec)
+{
+	struct reqresp rr = {0};
+
+	if(request(REQ_GCFG_SENS_AXIS, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	memcpy(svec, rr.data, 6 * sizeof *svec);
+	return 0;
+}
+
+int spnav_cfg_set_deadzone(int axis, int delta)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = axis;
+	rr.data[1] = delta;
+	return request(REQ_SCFG_DEADZONE, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_deadzone(int axis)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = axis;
+	if(request(REQ_GCFG_DEADZONE, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return rr.data[1];
+}
+
+int spnav_cfg_set_invert(int invbits)
+{
+	int i;
+	struct reqresp rr;
+
+	for(i=0; i<6; i++) {
+		rr.data[i] = invbits & 1;
+		invbits >>= 1;
+	}
+	return request(REQ_SCFG_INVERT, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_invert(void)
+{
+	int i, res = 0;
+	struct reqresp rr = {0};
+
+	if(request(REQ_GCFG_INVERT, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	for(i=0; i<6; i++) {
+		res = (res >> 1) | (rr.data[i] ? 0x20 : 0);
+	}
+	return res;
+}
+
+int spnav_cfg_set_axismap(int devaxis, int map)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = devaxis;
+	rr.data[1] = map;
+	return request(REQ_SCFG_AXISMAP, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_axismap(int devaxis)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = devaxis;
+	if(request(REQ_GCFG_AXISMAP, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return rr.data[1];
+}
+
+int spnav_cfg_set_bnmap(int devbn, int map)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = devbn;
+	rr.data[1] = map;
+	return request(REQ_SCFG_BNMAP, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_bnmap(int devbn)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = devbn;
+	if(request(REQ_GCFG_BNMAP, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return rr.data[1];
+}
+
+int spnav_cfg_set_bnaction(int bn, int act)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = bn;
+	rr.data[1] = act;
+	return request(REQ_SCFG_BNACTION, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_bnaction(int bn)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = bn;
+	if(request(REQ_GCFG_BNACTION, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return rr.data[1];
+}
+
+int spnav_cfg_set_kbmap(int bn, int key)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = bn;
+	rr.data[1] = key;
+	return request(REQ_SCFG_KBMAP, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_kbmap(int bn)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = bn;
+	if(request(REQ_GCFG_KBMAP, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return rr.data[1];
+}
+
+
+int spnav_cfg_set_led(int state)
+{
+	struct reqresp rr = {0};
+	return request(REQ_SCFG_LED, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_led(void)
+{
+	struct reqresp rr = {0};
+
+	if(request(REQ_GCFG_LED, &rr, TIMEOUT) == -1) {
+		return -1;
 	}
 	return rr.data[0];
 }

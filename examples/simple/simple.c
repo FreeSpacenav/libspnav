@@ -85,6 +85,8 @@ void print_dev_info(void)
 	}
 	printf("spacenav AF_UNIX protocol version: %d\n", proto);
 
+	spnav_client_name("simple example");
+
 	if(proto >= 1) {
 		printf("Device: %s\n", spnav_dev_name(0, 0));
 		printf("Path: %s\n", spnav_dev_path(0, 0));
