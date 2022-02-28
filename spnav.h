@@ -231,6 +231,10 @@ int spnav_cfg_get_kbmap(int bn);
 int spnav_cfg_set_led(int state);
 int spnav_cfg_get_led(void);	/* returns led setting, -1 on error */
 
+/* Device exclusive access grabbing */
+int spnav_cfg_set_grab(int state);
+int spnav_cfg_get_grab(void);	/* returns 0:no-grab/1:grab, or -1 on error */
+
 #ifdef __cplusplus
 }
 #endif

@@ -935,6 +935,8 @@ int spnav_cfg_get_kbmap(int bn)
 int spnav_cfg_set_led(int state)
 {
 	struct reqresp rr = {0};
+
+	rr.data[0] = state ? 1 : 0;
 	return request(REQ_SCFG_LED, &rr, TIMEOUT);
 }
 
@@ -943,6 +945,24 @@ int spnav_cfg_get_led(void)
 	struct reqresp rr = {0};
 
 	if(request(REQ_GCFG_LED, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return rr.data[0];
+}
+
+int spnav_cfg_set_grab(int state)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = state ? 1 : 0;
+	return request(REQ_SCFG_GRAB, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_grab(void)
+{
+	struct reqresp rr = {0};
+
+	if(request(REQ_GCFG_GRAB, &rr, TIMEOUT) == -1) {
 		return -1;
 	}
 	return rr.data[0];
