@@ -1,0 +1,6 @@
+Name: libspnav
+Description: Library to access 6-DoF input devices managed by spacenavd or the proprietary 3dxsrv driver.
+URL: http://spacenav.sourceforge.net
+Version: @VERSION@
+Cflags: -I${PREFIX}/include
+Libs: -L${PREFIX}/@LIBDIR@ -lspnav
