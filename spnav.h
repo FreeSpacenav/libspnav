@@ -168,6 +168,43 @@ int spnav_dev_buttons(void);
 /* returns the number of axes (defaults to 6 if unable to query) */
 int spnav_dev_axes(void);
 
+/* Writes the USB vendor:device ID through the vend/prod pointers.
+ * Returns 0 for success, or -1 on failure (for instance if there is no open
+ * device, or if it's not a USB device).
+ */
+int spnav_dev_usbid(unsigned int *vend, unsigned int *prod);
+
+enum {
+	SPNAV_DEV_UNKNOWN,
+	/* serial devices */
+	SPNAV_DEV_SB2003 = 0x100,	/* Spaceball 1003/2003/2003C */
+	SPNAV_DEV_SB3003,			/* Spaceball 3003/3003C */
+	SPNAV_DEV_SB4000,			/* Spaceball 4000FLX/5000FLX */
+	SPNAV_DEV_SM,				/* Magellan SpaceMouse */
+	SPNAV_DEV_SM5000,			/* Spaceball 5000 (spacemouse protocol) */
+	SPNAV_DEV_SMCADMAN,			/* 3Dconnexion CadMan (spacemouse protocol) */
+	/* USB devices */
+	SPNAV_DEV_PLUSXT = 0x200,	/* SpaceMouse Plus XT */
+	SPNAV_DEV_CADMAN,			/* 3Dconnexion CadMan (USB version) */
+	SPNAV_DEV_SMCLASSIC,		/* SpaceMouse Classic */
+	SPNAV_DEV_SB5000,			/* Spaceball 5000 (USB version) */
+	SPNAV_DEV_STRAVEL,			/* Space Traveller */
+	SPNAV_DEV_SPILOT,			/* Space Pilot */
+	SPNAV_DEV_SNAV,				/* Space Navigator */
+	SPNAV_DEV_SEXP,				/* Space Explorer */
+	SPNAV_DEV_SNAVNB,			/* Space Navigator for Notebooks */
+	SPNAV_DEV_SPILOTPRO,		/* Space Pilot pro */
+	SPNAV_DEV_SMPRO,			/* SpaceMouse Pro */
+	SPNAV_DEV_NULOOQ,			/* NuLOOQ */
+	SPNAV_DEV_SMW,				/* SpaceMouse Wireless */
+	SPNAV_DEV_SMPROW,			/* SpaceMouse Pro Wireless */
+	SPNAV_DEV_SMENT,			/* SpaceMouse Enterprise */
+	SPNAV_DEV_SMCOMP,			/* SpaceMouse Compact */
+	SPNAV_DEV_SMMOD				/* SpaceMouse Module */
+};
+
+/* Returns the device type (see enumeration above) or -1 on failure */
+int spnav_dev_type(void);
 
 /* configuration API
  * -----------------

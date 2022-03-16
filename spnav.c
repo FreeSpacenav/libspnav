@@ -769,7 +769,25 @@ int spnav_dev_axes(void)
 	return rr.data[0];
 }
 
+int spnav_dev_usbid(unsigned int *vend, unsigned int *prod)
+{
+	struct reqresp rr = {0};
+	if(request(REQ_DEV_USBID, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	if(vend) *vend = rr.data[0];
+	if(prod) *prod = rr.data[1];
+	return 0;
+}
 
+int spnav_dev_type(void)
+{
+	struct reqresp rr = {0};
+	if(request(REQ_DEV_TYPE, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return rr.data[0];
+}
 
 int spnav_cfg_set_sens(float s)
 {
