@@ -9,3 +9,4 @@ Makefile
 examples/cube/cube
 examples/simple/simple_af_unix
 examples/simple/simple_x11
+spnav.pc

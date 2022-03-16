@@ -59,6 +59,8 @@ install: $(lib_a) $(lib_so) $(hdr)
 		ln -s $(soname) $(devlink) || \
 		true
 	for h in $(hdr); do cp -p $(srcdir)/$$h $(DESTDIR)$(PREFIX)/include/; done
+	mkdir -p $(DESTDIR)$(PREFIX)/share/pkgconfig
+	cp spnav.pc $(DESTDIR)$(PREFIX)/share/pkgconfig/spnav.pc
 
 .PHONY: uninstall
 uninstall:
@@ -68,4 +70,5 @@ uninstall:
 		rm -f $(DESTDIR)$(PREFIX)/$(libdir)/$(soname) $(DESTDIR)$(PREFIX)/$(libdir)/$(devlink) || \
 		true
 	for i in $(hdr); do rm -f $(DESTDIR)$(PREFIX)/include/$$i; done
+	rm -f $(DESTDIR)$(PREFIX)/share/pkgconfig/spnav.pc
 
