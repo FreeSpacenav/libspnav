@@ -237,10 +237,10 @@ int spnav_cfg_set_axis_sens(const float *svec);
 int spnav_cfg_get_axis_sens(float *svecret);  /* writes 6 floats through svec */
 
 /* Set deadzone for a device axis
- * cfgfile options: dead-zone-translation-[x|y|z], dead-zone-rotation-[x|y|z]
+ * cfgfile options: dead-zoneN,
  */
-int spnav_cfg_set_deadzone(int axis, int delta);
-int spnav_cfg_get_deadzone(int axis);	/* returns deadzone, -1 on error */
+int spnav_cfg_set_deadzone(int devaxis, int delta);
+int spnav_cfg_get_deadzone(int devaxis);	/* returns deadzone, -1 on error */
 
 /* Set the axis invert state
  * 0: normal, 1: inverted. order: MSB [ ... RZ|RY|RX|TZ|TY|TX] LSB
