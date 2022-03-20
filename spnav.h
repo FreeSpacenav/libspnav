@@ -223,6 +223,21 @@ enum {
 	SPNAV_MAX_BNACT
 };
 
+/* Reset all settings to their default values. This change will not persist
+ * between spacenavd restarts, unless followed by a call to spnav_cfg_save.
+ */
+int spnav_cfg_reset(void);
+
+/* Revert all the session settings to the values defined in the spacenavd
+ * configuration file. This change will not persist between spacenavd restarts,
+ * unless followed by a call to spnav_cfg_save.
+ */
+int spnav_cfg_restore(void);
+
+/* Save all the current settings to the spacenavd configuration file. */
+int spnav_cfg_save(void);
+
+
 /* Set the global sensitivity.
  * cfgfile option: sensitivity
  */

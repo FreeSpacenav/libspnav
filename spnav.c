@@ -789,6 +789,24 @@ int spnav_dev_type(void)
 	return rr.data[0];
 }
 
+int spnav_cfg_reset(void)
+{
+	struct reqresp rr = {0};
+	return request(REQ_CFG_RESET, &rr, TIMEOUT);
+}
+
+int spnav_cfg_restore(void)
+{
+	struct reqresp rr = {0};
+	return request(REQ_CFG_RESTORE, &rr, TIMEOUT);
+}
+
+int spnav_cfg_save(void)
+{
+	struct reqresp rr = {0};
+	return request(REQ_CFG_SAVE, &rr, TIMEOUT);
+}
+
 int spnav_cfg_set_sens(float s)
 {
 	struct reqresp rr = {0};
