@@ -36,11 +36,16 @@ OF SUCH DAMAGE.
 enum {
 	SPNAV_EVENT_ANY,	/* used by spnav_remove_events() */
 	SPNAV_EVENT_MOTION,
-	SPNAV_EVENT_BUTTON	/* includes both press and release */
+	SPNAV_EVENT_BUTTON,	/* includes both press and release */
+
+	SPNAV_EVENT_DEV = 4,/* add/remove device event */
+	SPNAV_EVENT_CFG		/* configuration change event */
 };
 
+enum { SPNAV_DEV_ADD, SPNAV_DEV_RM };
+
 struct spnav_event_motion {
-	int type;
+	int type;			/* SPNAV_EVENT_MOTION */
 	int x, y, z;
 	int rx, ry, rz;
 	unsigned int period;
@@ -48,15 +53,31 @@ struct spnav_event_motion {
 };
 
 struct spnav_event_button {
-	int type;
+	int type;			/* SPNAV_EVENT_BUTTON */
 	int press;
 	int bnum;
+};
+
+struct spnav_event_dev {
+	int type;			/* SPNAV_EVENT_DEV */
+	int op;				/* SPNAV_DEV_ADD / SPNAV_DEV_RM */
+	int id;
+	int devtype;		/* see spnav_dev_type() */
+	int usbid[2];		/* USB id if it's a USB device, 0:0 if it's a serial device */
+};
+
+struct spnav_event_cfg {
+	int type;			/* SPNAV_EVENT_CFG */
+	int cfg;			/* same as protocol REQ_GCFG* enum */
+	int data[6];		/* same as protocol response data 0-5 */
 };
 
 typedef union spnav_event {
 	int type;
 	struct spnav_event_motion motion;
 	struct spnav_event_button button;
+	struct spnav_event_dev dev;
+	struct spnav_event_cfg cfg;
 } spnav_event;
 
 
@@ -145,6 +166,19 @@ int spnav_protocol(void);
 
 /* Set client name */
 int spnav_client_name(const char *name);
+
+/* Select the types of events the client is interested in receiving */
+enum {
+	SPNAV_EVMASK_MOTION		= 1,	/* 6dof motion events */
+	SPNAV_EVMASK_BUTTON		= 2,	/* button events */
+	SPNAV_EVMASK_DEV		= 4,	/* device change events */
+	SPNAV_EVMASK_CFG		= 8,	/* configuration change events */
+
+	SPNAV_EVMASK_INPUT		= SPNAV_EVMASK_MOTION | SPNAV_EVMASK_BUTTON,
+	SPNAV_EVMASK_DEFAULT	= SPNAV_EVMASK_INPUT | SPNAV_EVMASK_DEV,
+	SPNAV_EVMASK_ALL		= 0xffff
+};
+int spnav_evmask(unsigned int mask);
 
 /* TODO multi-device support and device selection not implemented yet
 int spnav_num_devices(void);

@@ -390,20 +390,46 @@ static int read_event(int s, spnav_event *event)
 		return 0;
 	}
 
-	if(data[0] < 0 || data[0] > 2) {
+	return proc_event(data, event);
+}
+
+static int proc_event(int *data, spnav_event *event)
+{
+	if(data[0] < 0 || data[0] >= MAX_UEV) {
 		return 0;
 	}
-	event->type = data[0] ? SPNAV_EVENT_BUTTON : SPNAV_EVENT_MOTION;
+	if(data[0] == UEV_PRESS || data[0] == UEV_RELEASE) {
+		event->type = SPNAV_EVENT_BUTTON;
+	} else {
+		event->type = data[0];
+	}
 
-	if(event->type == SPNAV_EVENT_MOTION) {
+	switch(event->type) {
+	case SPNAV_EVENT_MOTION:
 		event->motion.data = &event->motion.x;
 		for(i=0; i<6; i++) {
 			event->motion.data[i] = data[i + 1];
 		}
 		event->motion.period = data[7];
-	} else {
-		event->button.press = data[0] == 1 ? 1 : 0;
+		break;
+
+	case SPNAV_EVENT_BUTTON:
+		event->button.press = data[0] == UEV_PRESS ? 1 : 0;
 		event->button.bnum = data[1];
+		break;
+
+	case SPNAV_EVENT_DEV:
+		event->dev.op = data[1];
+		event->dev.id = data[2];
+		event->dev.devtype = data[3];
+		event->dev.usbid[0] = data[4];
+		event->dev.usbid[1] = data[5];
+		break;
+
+	case SPNAV_EVENT_CFG:
+		event->cfg.cfg = data[1];
+		memcpy(event->cfg.data, data + 2, sizeof event->cfg.data);
+		break;
 	}
 
 	return event->type;
