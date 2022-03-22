@@ -50,6 +50,9 @@ OF SUCH DAMAGE.
 static Window get_daemon_window(Display *dpy);
 static int catch_badwin(Display *dpy, XErrorEvent *err);
 
+static int read_event(int s, spnav_event *event);
+static int proc_event(int *data, spnav_event *event);
+
 static int wait_resp(void *buf, int sz, int timeout_ms);
 static int request(int req, struct reqresp *rr, int timeout_ms);
 
@@ -363,7 +366,7 @@ static int event_pending(int s)
  */
 static int read_event(int s, spnav_event *event)
 {
-	int i, rd;
+	int rd;
 	int data[8];
 
 	/* if we have a queued event, deliver that one */
@@ -395,6 +398,8 @@ static int read_event(int s, spnav_event *event)
 
 static int proc_event(int *data, spnav_event *event)
 {
+	int i;
+
 	if(data[0] < 0 || data[0] >= MAX_UEV) {
 		return 0;
 	}
@@ -993,6 +998,23 @@ int spnav_cfg_get_kbmap(int bn)
 	return rr.data[1];
 }
 
+int spnav_cfg_set_swapyz(int swap)
+{
+	struct reqresp rr = {0};
+
+	rr.data[0] = swap;
+	return request(REQ_SCFG_SWAPYZ, &rr, TIMEOUT);
+}
+
+int spnav_cfg_get_swapyz(void)
+{
+	struct reqresp rr = {0};
+
+	if(request(REQ_GCFG_SWAPYZ, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return rr.data[0];
+}
 
 int spnav_cfg_set_led(int state)
 {

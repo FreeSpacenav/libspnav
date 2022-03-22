@@ -310,6 +310,9 @@ int spnav_cfg_get_bnaction(int bn);
 int spnav_cfg_set_kbmap(int bn, int key);
 int spnav_cfg_get_kbmap(int bn);
 
+int spnav_cfg_set_swapyz(int swap);
+int spnav_cfg_get_swapyz(void);
+
 /* Control device LED
  * SPNAV_CFG_LED_OFF | SPNAV_CFG_LED_ON | SPNAV_CFG_LED_AUTO
  * cfgfile option: led
