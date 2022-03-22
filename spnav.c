@@ -403,9 +403,16 @@ static int proc_event(int *data, spnav_event *event)
 	if(data[0] < 0 || data[0] >= MAX_UEV) {
 		return 0;
 	}
-	if(data[0] == UEV_PRESS || data[0] == UEV_RELEASE) {
+
+	switch(data[0]) {
+	case UEV_MOTION:
+		event->type = SPNAV_EVENT_MOTION;
+		break;
+	case UEV_PRESS:
+	case UEV_RELEASE:
 		event->type = SPNAV_EVENT_BUTTON;
-	} else {
+		break;
+	default:
 		event->type = data[0];
 	}
 
@@ -1020,7 +1027,9 @@ int spnav_cfg_set_led(int state)
 {
 	struct reqresp rr = {0};
 
-	rr.data[0] = state ? 1 : 0;
+	if(state < 0 || state >= 3) return -1;
+
+	rr.data[0] = state;
 	return request(REQ_SCFG_LED, &rr, TIMEOUT);
 }
 

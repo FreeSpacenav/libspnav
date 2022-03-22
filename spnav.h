@@ -38,7 +38,7 @@ enum {
 	SPNAV_EVENT_MOTION,
 	SPNAV_EVENT_BUTTON,	/* includes both press and release */
 
-	SPNAV_EVENT_DEV = 4,/* add/remove device event */
+	SPNAV_EVENT_DEV,	/* add/remove device event */
 	SPNAV_EVENT_CFG		/* configuration change event */
 };
 
