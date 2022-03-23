@@ -40,13 +40,13 @@ int main(void)
 	 * motion/button events through the 3dxsrv-compatible X11 protocol.
 	 */
 	if(spnav_x11_open(dpy, win) == -1) {
-		fprintf(stderr, "failed to connect to the space navigator daemon\n");
+		fprintf(stderr, "failed to connect to spacenavd\n");
 		return 1;
 	}
 
 #elif defined(BUILD_AF_UNIX)
 	if(spnav_open()==-1) {
-		fprintf(stderr, "failed to connect to the space navigator daemon\n");
+		fprintf(stderr, "failed to connect to spacenavd\n");
 		return 1;
 	}
 
@@ -78,6 +78,7 @@ int main(void)
 void print_dev_info(void)
 {
 	int proto;
+	char buf[256];
 
 	if((proto = spnav_protocol()) == -1) {
 		fprintf(stderr, "failed to query protocol version\n");
@@ -88,8 +89,10 @@ void print_dev_info(void)
 	spnav_client_name("simple example");
 
 	if(proto >= 1) {
-		printf("Device: %s\n", spnav_dev_name(0, 0));
-		printf("Path: %s\n", spnav_dev_path(0, 0));
+		spnav_dev_name(buf, sizeof buf);
+		printf("Device: %s\n", buf);
+		spnav_dev_path(buf, sizeof buf);
+		printf("Path: %s\n", buf);
 		printf("Buttons: %d\n", spnav_dev_buttons());
 		printf("Axes: %d\n", spnav_dev_axes());
 	}

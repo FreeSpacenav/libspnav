@@ -55,6 +55,7 @@ static int proc_event(int *data, spnav_event *event);
 
 static int wait_resp(void *buf, int sz, int timeout_ms);
 static int request(int req, struct reqresp *rr, int timeout_ms);
+static int request_str(int req, char *buf, int bufsz, int timeout_ms);
 
 
 static Display *dpy;
@@ -712,8 +713,41 @@ static int request(int req, struct reqresp *rr, int timeout_ms)
 	}
 
 	/* XXX assuming data[6] is always status */
-	if(rr->type != req || rr->data[6] != 0) return -1;
+	if(rr->type != req || rr->data[6] < 0) return -1;
 	return 0;
+}
+
+static int request_str(int req, char *buf, int bufsz, int timeout_ms)
+{
+	int res = -1;
+	struct reqresp rr = {0};
+	struct reqresp_strbuf sbuf = {0};
+
+	/* flush any pending data from the buffer which can cause de-syncing */
+	while(wait_resp(&rr, sizeof rr, 1) != -1);
+
+	if(request(req, &rr, timeout_ms) == -1) {
+		return -1;
+	}
+
+	while((res = proto_recv_str(&sbuf, &rr)) == 0) {
+		if(wait_resp(&rr, sizeof rr, timeout_ms) == -1) {
+			free(sbuf.buf);
+			return -1;
+		}
+	}
+
+	if(res == -1) {
+		free(sbuf.buf);
+		return -1;
+	}
+
+	if(buf) {
+		strncpy(buf, sbuf.buf, bufsz - 1);
+		buf[bufsz - 1] = 0;
+	}
+	free(sbuf.buf);
+	return sbuf.size - 1;
 }
 
 
@@ -725,68 +759,17 @@ int spnav_protocol(void)
 
 int spnav_client_name(const char *name)
 {
-	struct reqresp rr = {0};
-	int len = strlen(name);
-	if(len > sizeof rr.data) {
-		len = sizeof rr.data;
-	}
-	memcpy(rr.data, name, len);
-
-	return request(REQ_SET_NAME, &rr, TIMEOUT);
+	return proto_send_str(sock, REQ_SET_NAME, name);
 }
 
-const char *query_str(char *buf, int bufsz, int req)
+int spnav_dev_name(char *buf, int bufsz)
 {
-	struct reqresp rr = {0};
-	static char strbuf[512];
-	char *str;
-
-	if(!buf) {
-		buf = strbuf;
-		bufsz = sizeof strbuf;
-	}
-
-	/* if we get a huge name, something is probably wrong, assume it's a mistake */
-	if(request(req, &rr, TIMEOUT) == -1 || rr.data[6] != 0 || rr.data[0] >= 512 || rr.data[0] <= 0) {
-		return 0;
-	}
-
-	if(bufsz < rr.data[0]) {
-		if(!(str = malloc(rr.data[0] + 1))) {
-			str = strbuf;
-			bufsz = sizeof strbuf;
-		}
-	} else {
-		str = buf;
-	}
-
-	if(wait_resp(str, rr.data[0], TIMEOUT) == -1) {
-		if(str != strbuf && str != buf) {
-			free(str);
-		}
-		return 0;
-	}
-	str[rr.data[0]] = 0;
-
-	if(str != buf) {
-		strncpy(buf, str, bufsz);
-		buf[bufsz - 1] = 0;
-	}
-
-	if(str != strbuf && str != buf) {
-		free(str);
-	}
-	return buf;
+	return request_str(REQ_DEV_NAME, buf, bufsz, TIMEOUT);
 }
 
-const char *spnav_dev_name(char *buf, int bufsz)
+int spnav_dev_path(char *buf, int bufsz)
 {
-	return query_str(buf, bufsz, REQ_DEV_NAME);
-}
-
-const char *spnav_dev_path(char *buf, int bufsz)
-{
-	return query_str(buf, bufsz, REQ_DEV_PATH);
+	return request_str(REQ_DEV_PATH, buf, bufsz, TIMEOUT);
 }
 
 int spnav_dev_buttons(void)
@@ -1063,25 +1046,10 @@ int spnav_cfg_get_grab(void)
 
 int spnav_cfg_set_serial(const char *devpath)
 {
-	struct reqresp rr = {0};
-	int i, len = strlen(devpath);
-
-	while(len > 0) {
-		rr.data[0] = len;
-		for(i=0; i<6; i++) {
-			rr.data[i + 1] = *devpath ? *devpath++ : 0;
-		}
-		len -= 6;
-
-		if(request(REQ_SCFG_SERDEV, &rr, TIMEOUT) == -1) {
-			return -1;
-		}
-	}
-	return 0;
+	return proto_send_str(sock, REQ_SCFG_SERDEV, devpath);
 }
 
-const char *spnav_cfg_get_serial(char *buf, int bufsz)
+int spnav_cfg_get_serial(char *buf, int bufsz)
 {
-	return query_str(buf, bufsz, REQ_GCFG_SERDEV);
+	return request_str(REQ_GCFG_SERDEV, buf, bufsz, TIMEOUT);
 }
-

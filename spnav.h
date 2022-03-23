@@ -186,16 +186,17 @@ int spnav_select_device(int dev);
 */
 
 /* Returns a descriptive device name.
- * The name is copied into buf, and a pointer to it is returned. No more than
- * bufsz bytes are written including the zero terminator.
- * buf can be null, in which case a pointer to a static string is returned.
+ * If buf is not null, the name is copied into buf. No more than bufsz bytes are
+ * written, including the zero terminator.
+ * The number of bytes that would have been written assuming enough space in buf
+ * are returned, including the zero terminator.
  */
-const char *spnav_dev_name(char *buf, int bufsz);
+int spnav_dev_name(char *buf, int bufsz);
 
 /* Returns the path to the device file if applicable.
  * Usage same as spnav_dev_name.
  */
-const char *spnav_dev_path(char *buf, int bufsz);
+int spnav_dev_path(char *buf, int bufsz);
 
 /* returns the number of buttons (defaults to 2 if unable to query) */
 int spnav_dev_buttons(void);
@@ -325,7 +326,7 @@ int spnav_cfg_set_grab(int state);
 int spnav_cfg_get_grab(void);	/* returns 0:no-grab/1:grab, or -1 on error */
 
 int spnav_cfg_set_serial(const char *devpath);
-const char *spnav_cfg_get_serial(char *buf, int bufsz);
+int spnav_cfg_get_serial(char *buf, int bufsz);
 
 #ifdef __cplusplus
 }
