@@ -1060,3 +1060,28 @@ int spnav_cfg_get_grab(void)
 	}
 	return rr.data[0];
 }
+
+int spnav_cfg_set_serial(const char *devpath)
+{
+	struct reqresp rr = {0};
+	int i, len = strlen(devpath);
+
+	while(len > 0) {
+		rr.data[0] = len;
+		for(i=0; i<6; i++) {
+			rr.data[i + 1] = *devpath ? *devpath++ : 0;
+		}
+		len -= 6;
+
+		if(request(REQ_SCFG_SERDEV, &rr, TIMEOUT) == -1) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+const char *spnav_cfg_get_serial(char *buf, int bufsz)
+{
+	return query_str(buf, bufsz, REQ_GCFG_SERDEV);
+}
+

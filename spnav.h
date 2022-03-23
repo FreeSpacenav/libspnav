@@ -324,6 +324,9 @@ int spnav_cfg_get_led(void);	/* returns led setting, -1 on error */
 int spnav_cfg_set_grab(int state);
 int spnav_cfg_get_grab(void);	/* returns 0:no-grab/1:grab, or -1 on error */
 
+int spnav_cfg_set_serial(const char *devpath);
+const char *spnav_cfg_get_serial(char *buf, int bufsz);
+
 #ifdef __cplusplus
 }
 #endif
