@@ -367,7 +367,7 @@ static int event_pending(int s)
 static int read_event(int s, spnav_event *event)
 {
 	int rd;
-	int data[8];
+	int32_t data[8];
 
 	/* if we have a queued event, deliver that one */
 	if(ev_queue->next) {
@@ -396,7 +396,7 @@ static int read_event(int s, spnav_event *event)
 	return proc_event(data, event);
 }
 
-static int proc_event(int *data, spnav_event *event)
+static int proc_event(int32_t *data, spnav_event *event)
 {
 	int i;
 
@@ -752,7 +752,7 @@ const char *query_str(char *buf, int bufsz, int req)
 	}
 
 	if(bufsz < rr.data[0]) {
-		if(!(str = malloc(rr.data[0]))) {
+		if(!(str = malloc(rr.data[0] + 1))) {
 			str = strbuf;
 			bufsz = sizeof strbuf;
 		}
