@@ -730,7 +730,7 @@ static int request_str(int req, char *buf, int bufsz, int timeout_ms)
 		return -1;
 	}
 
-	while((res = proto_recv_str(&sbuf, &rr)) == 0) {
+	while((res = spnav_recv_str(&sbuf, &rr)) == 0) {
 		if(wait_resp(&rr, sizeof rr, timeout_ms) == -1) {
 			free(sbuf.buf);
 			return -1;
@@ -759,7 +759,7 @@ int spnav_protocol(void)
 
 int spnav_client_name(const char *name)
 {
-	return proto_send_str(sock, REQ_SET_NAME, name);
+	return spnav_send_str(sock, REQ_SET_NAME, name);
 }
 
 int spnav_dev_name(char *buf, int bufsz)
@@ -1046,7 +1046,7 @@ int spnav_cfg_get_grab(void)
 
 int spnav_cfg_set_serial(const char *devpath)
 {
-	return proto_send_str(sock, REQ_SCFG_SERDEV, devpath);
+	return spnav_send_str(sock, REQ_SCFG_SERDEV, devpath);
 }
 
 int spnav_cfg_get_serial(char *buf, int bufsz)

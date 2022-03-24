@@ -1,5 +1,5 @@
 
-obj = spnav.o $(magellan_obj)
+obj = spnav.o proto.o $(magellan_obj)
 hdr = spnav.h spnav_magellan.h spnav_config.h
 
 name = spnav
