@@ -189,7 +189,7 @@ int spnav_select_device(int dev);
  * If buf is not null, the name is copied into buf. No more than bufsz bytes are
  * written, including the zero terminator.
  * The number of bytes that would have been written assuming enough space in buf
- * are returned, including the zero terminator.
+ * are returned, excluding the zero terminator.
  */
 int spnav_dev_name(char *buf, int bufsz);
 
