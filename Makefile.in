@@ -1,6 +1,6 @@
 
-obj = spnav.o proto.o $(magellan_obj)
-hdr = spnav.h spnav_magellan.h spnav_config.h
+obj = src/spnav.o src/proto.o $(magellan_obj)
+hdr = src/spnav.h src/spnav_magellan.h src/spnav_config.h
 
 name = spnav
 lib_a = lib$(name).a

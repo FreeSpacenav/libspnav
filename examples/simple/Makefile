@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -pedantic -Wall -g -I../.. -I/usr/local/include
+CFLAGS = -pedantic -Wall -g -I../.. -I../../src -I/usr/local/include
 LDFLAGS = -L../.. -L/usr/local/lib -lspnav -lX11
 
 .PHONY: all
