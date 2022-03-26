@@ -39,7 +39,7 @@ OF SUCH DAMAGE.
 #include "proto.h"
 
 /* default timeout for request responses*/
-#define TIMEOUT	256
+#define TIMEOUT	400
 /* default socket path */
 #define SPNAV_SOCK_PATH "/var/run/spnav.sock"
 
@@ -53,6 +53,7 @@ static int catch_badwin(Display *dpy, XErrorEvent *err);
 static int read_event(int s, spnav_event *event);
 static int proc_event(int *data, spnav_event *event);
 
+static void flush_resp(void);
 static int wait_resp(void *buf, int sz, int timeout_ms);
 static int request(int req, struct reqresp *rr, int timeout_ms);
 static int request_str(int req, char *buf, int bufsz, int timeout_ms);
@@ -157,7 +158,7 @@ success:
 	 */
 	cmd = REQ_TAG | REQ_CHANGE_PROTO | MAX_PROTO_VER;
 	write(s, &cmd, sizeof cmd);
-	if(wait_resp(&cmd, sizeof cmd, TIMEOUT) == -1) {
+	if(wait_resp(&cmd, sizeof cmd, 300) == -1) {
 		spnav_sensitivity(1.0f);
 	} else {
 		proto = cmd & 0xff;
@@ -667,6 +668,21 @@ int catch_badwin(Display *dpy, XErrorEvent *err)
 }
 #endif
 
+static void flush_resp(void)
+{
+	int res;
+	char buf[256];
+	fd_set rdset;
+	struct timeval tv = {0};
+
+	FD_ZERO(&rdset);
+	FD_SET(sock, &rdset);
+
+	while((res = select(sock + 1, &rdset, 0, 0, &tv)) > 0 || (res == -1 && errno == EINTR)) {
+		read(sock, buf, sizeof buf);
+	}
+}
+
 static int wait_resp(void *buf, int sz, int timeout_ms)
 {
 	int res;
@@ -704,6 +720,8 @@ static int request(int req, struct reqresp *rr, int timeout_ms)
 {
 	if(sock < 0 || proto < 1) return -1;
 
+	flush_resp();
+
 	req |= REQ_TAG;
 	rr->type = req;
 
@@ -722,9 +740,6 @@ static int request_str(int req, char *buf, int bufsz, int timeout_ms)
 	int res = -1;
 	struct reqresp rr = {0};
 	struct reqresp_strbuf sbuf = {0};
-
-	/* flush any pending data from the buffer which can cause de-syncing */
-	while(wait_resp(&rr, sizeof rr, 1) != -1);
 
 	if(request(req, &rr, timeout_ms) == -1) {
 		return -1;
