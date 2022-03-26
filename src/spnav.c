@@ -777,6 +777,16 @@ int spnav_client_name(const char *name)
 	return spnav_send_str(sock, REQ_SET_NAME, name);
 }
 
+int spnav_evmask(unsigned int mask)
+{
+	struct reqresp rr = {0};
+	rr.data[0] = mask;
+	if(request(REQ_SET_EVMASK, &rr, TIMEOUT) == -1) {
+		return -1;
+	}
+	return 0;
+}
+
 int spnav_dev_name(char *buf, int bufsz)
 {
 	return request_str(REQ_DEV_NAME, buf, bufsz, TIMEOUT);
