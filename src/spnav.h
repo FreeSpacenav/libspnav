@@ -39,7 +39,10 @@ enum {
 	SPNAV_EVENT_BUTTON,	/* includes both press and release */
 
 	SPNAV_EVENT_DEV,	/* add/remove device event */
-	SPNAV_EVENT_CFG		/* configuration change event */
+	SPNAV_EVENT_CFG,	/* configuration change event */
+
+	SPNAV_EVENT_RAWAXIS,
+	SPNAV_EVENT_RAWBUTTON
 };
 
 enum { SPNAV_DEV_ADD, SPNAV_DEV_RM };
@@ -53,7 +56,7 @@ struct spnav_event_motion {
 };
 
 struct spnav_event_button {
-	int type;			/* SPNAV_EVENT_BUTTON */
+	int type;			/* SPNAV_EVENT_BUTTON or SPNAV_EVENT_RAWBUTTON */
 	int press;
 	int bnum;
 };
@@ -72,12 +75,19 @@ struct spnav_event_cfg {
 	int data[6];		/* same as protocol response data 0-5 */
 };
 
+struct spnav_event_axis {
+	int type;			/* SPNAV_EVENT_RAWAXIS */
+	int idx;			/* axis number */
+	int value;			/* value */
+};
+
 typedef union spnav_event {
 	int type;
 	struct spnav_event_motion motion;
 	struct spnav_event_button button;
 	struct spnav_event_dev dev;
 	struct spnav_event_cfg cfg;
+	struct spnav_event_axis axis;
 } spnav_event;
 
 
@@ -169,10 +179,13 @@ int spnav_client_name(const char *name);
 
 /* Select the types of events the client is interested in receiving */
 enum {
-	SPNAV_EVMASK_MOTION		= 1,	/* 6dof motion events */
-	SPNAV_EVMASK_BUTTON		= 2,	/* button events */
-	SPNAV_EVMASK_DEV		= 4,	/* device change events */
-	SPNAV_EVMASK_CFG		= 8,	/* configuration change events */
+	SPNAV_EVMASK_MOTION		= 0x01,	/* 6dof motion events */
+	SPNAV_EVMASK_BUTTON		= 0x02,	/* button events */
+	SPNAV_EVMASK_DEV		= 0x04,	/* device change events */
+	SPNAV_EVMASK_CFG		= 0x08,	/* configuration change events */
+
+	SPNAV_EVMASK_RAWAXIS	= 0x10,	/* raw device axis events */
+	SPNAV_EVMASK_RAWBUTTON	= 0x20,	/* raw device button events */
 
 	SPNAV_EVMASK_INPUT		= SPNAV_EVMASK_MOTION | SPNAV_EVMASK_BUTTON,
 	SPNAV_EVMASK_DEFAULT	= SPNAV_EVMASK_INPUT | SPNAV_EVMASK_DEV,

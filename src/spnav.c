@@ -427,9 +427,19 @@ static int proc_event(int32_t *data, spnav_event *event)
 		event->motion.period = data[7];
 		break;
 
+	case SPNAV_EVENT_RAWAXIS:
+		event->axis.idx = data[1];
+		event->axis.value = data[2];
+		break;
+
 	case SPNAV_EVENT_BUTTON:
 		event->button.press = data[0] == UEV_PRESS ? 1 : 0;
 		event->button.bnum = data[1];
+		break;
+
+	case SPNAV_EVENT_RAWBUTTON:
+		event->button.bnum = data[1];
+		event->button.press = data[2];
 		break;
 
 	case SPNAV_EVENT_DEV:
