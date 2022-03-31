@@ -845,6 +845,9 @@ int spnav_dev_type(void)
 	return rr.data[0];
 }
 
+
+/* configuation api */
+
 int spnav_cfg_reset(void)
 {
 	struct reqresp rr = {0};

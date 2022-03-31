@@ -254,8 +254,39 @@ enum {
 /* Returns the device type (see enumeration above) or -1 on failure */
 int spnav_dev_type(void);
 
-/* configuration API
- * -----------------
+
+/* Utility functions
+ * -----------------------------------------------------------------------------
+ * These are optional helper functions which perform tasks commonly needed by 3D
+ * programs using 6dof input.
+ */
+
+struct spnav_posrot {
+	float pos[3];	/* position vector (x, y, z) */
+	float rot[4];	/* orientation quaternion (x, y, z, w) w:real xyz:imaginary */
+};
+
+void spnav_posrot_init(struct spnav_posrot *pr);
+void spnav_posrot_moveobj(struct spnav_posrot *pr, const struct spnav_event_motion *mev);
+void spnav_posrot_moveview(struct spnav_posrot *pr, const struct spnav_event_motion *mev);
+
+/* Construct a 4x4 homogeneous transformation matrix, representing the
+ * orientation defined by a quaternion and the position defined by a 3-vector.
+ * Useful for manipulating objects with 6dof input. Use in conjunction with
+ * spnav_posrot_moveobj, to accumulate motion inputs.
+ */
+void spnav_matrix_obj(float *mat, struct spnav_posrot *pr);
+
+/* Construct a 4x4 homogeneous transformation matrix, with the inverse of the
+ * orientation defined by a quaternion and the position defined by a 3-vector.
+ * Useful for as view matrix for 6dof-controlled flight in 3D space. Use in
+ * conjunction with spnav_posrot_moveview, to accumulate motion inputs.
+ */
+void spnav_matrix_view(float *mat, struct spnav_posrot *pr);
+
+
+/* Configuration API
+ * -----------------------------------------------------------------------------
  * This API is mostly targeted towards configuration management tools (like
  * spnavcfg). Normal clients should avoid changing the spacenavd configuration.
  * They should use the non-persistent client-specific settings instead.
@@ -318,11 +349,11 @@ int spnav_cfg_get_axismap(int devaxis);
 int spnav_cfg_set_bnmap(int devbn, int map);
 int spnav_cfg_get_bnmap(int devbn);
 
-int spnav_cfg_set_bnaction(int bn, int act);
-int spnav_cfg_get_bnaction(int bn);
+int spnav_cfg_set_bnaction(int devbn, int act);
+int spnav_cfg_get_bnaction(int devbn);
 
-int spnav_cfg_set_kbmap(int bn, int key);
-int spnav_cfg_get_kbmap(int bn);
+int spnav_cfg_set_kbmap(int devbn, int key);
+int spnav_cfg_get_kbmap(int devbn);
 
 int spnav_cfg_set_swapyz(int swap);
 int spnav_cfg_get_swapyz(void);
