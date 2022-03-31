@@ -47,6 +47,10 @@ development of spacenavd), and also since the magellan protocol introduces an
 unnecessary dependency to the X window system, and provides very rudimentary
 functionality, new applications are encouraged to use `spnav_open`.
 
+Also, libspnav provides a magellan API wrapper on top of the libspnav API, which
+allows existing applications written for the official SDK to be transparently
+recompiled against libspnav and be free of the 3Dconnexion licensing conditions.
+
 Quick start
 -----------
 Libspnav, as of version 1.0 has been expanded, but really most applications will
@@ -96,6 +100,12 @@ thread for it, you can simply wait for events like so:
         }
     }
 
+> Note that there is a set of helper utility functions provided by libspnav, for
+> accumulating motion inputs into a position vector and an orientation quaternion,
+> and for extracting a matrix from them suitable for manipulating 3D objects, or
+> for manipulating the view to fly through a 3D scene. See the "cube" and "fly"
+> example programs.
+
 Alternatively an application can check for new events without blocking, by
 calling `spnav_poll_event`. It's also worth noting that both functions work
 exactly the same regardless of which protocol is in use.
@@ -121,6 +131,9 @@ communication socket. This can be used in a regular `select` loop:
         }
     }
 
+> The "fly" example program also demonstrates how to integrate libspnav events
+> in a select loop, which is also handling X events coming from the Xlib socket.
+
 The level of functionality described in this section (minus the device queries),
 can be achieved and works exactly the same with both protocols. The only
 difference is in calling `spnav_open` for the native protocol, or calling
@@ -136,7 +149,7 @@ in detail.
 
 ### Initialization and cleanup
 
-#### spnav_open
+#### spnav\_open
 
 Function prototype: `int spnav_open(void)`
 
@@ -148,7 +161,7 @@ set, use `spnav_x11_open` instead.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_close
+#### spnav\_close
 
 Function prototype: `int spnav_close(void)`
 
@@ -156,7 +169,7 @@ Close the connection to the driver. No further events will be received.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_fd
+#### spnav\_fd
 
 Function prototype: `int spnav_fd(void)`
 
@@ -170,7 +183,7 @@ been closed, -1 is returned.
 
 Returns: file descriptor on success, -1 on failure.
 
-#### spnav_x11_open
+#### spnav\_x11\_open
 
 Function prototype: `int spnav_x11_open(Display *dpy, Window win)`
 
@@ -180,7 +193,7 @@ by calling `spnav_x11_window`.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_protocol
+#### spnav\_protocol
 
 Function prototype: `int spnav_protocol(void)`
 
@@ -192,7 +205,7 @@ Returns: protocol version on success, -1 on failure.
 
 ### Application requests
 
-#### spnav_client_name
+#### spnav\_client\_name
 
 Function prototype: `int spnav_client_name(const char *name)`
 
@@ -202,7 +215,7 @@ protocol v1 or later.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_evmask
+#### spnav\_evmask
 
 Function prototype: `int spnav_evmask(unsigned int mask)`
 
@@ -219,7 +232,7 @@ Event mask selection only works over the spacenav protocol v1 or later.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_sensitivity
+#### spnav\_sensitivity
 
 Function prototype: `int spnav_sensitivity(double sens)`
 
@@ -228,7 +241,7 @@ to this application.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_x11_window
+#### spnav\_x11\_window
 
 Function prototype: `int spnav_x11_window(Window win)`
 
@@ -240,7 +253,7 @@ Returns: 0 on success, -1 on failure.
 
 ### Input events
 
-#### spnav_wait_event
+#### spnav\_wait\_event
 
 Function prototype: `int spnav_wait_event(spnav_event *ev)`
 
@@ -262,7 +275,7 @@ structures.
 
 Returns: non-zero when it successfully received an event, 0 on failure.
 
-#### spnav_poll_event
+#### spnav\_poll\_event
 
 Function prototype: `int spnav_poll_event(spnav_event *ev)`
 
@@ -273,7 +286,7 @@ See `spnav_wait_event` above for the definition of `spnav_event`.
 
 Returns: event type if an event is pending, 0 if there are no available events.
 
-#### spnav_remove_events
+#### spnav\_remove\_events
 
 Function prototype: `int spnav_remove_events(int type)`
 
@@ -282,7 +295,7 @@ Drops any pending events of the specified type, or all pending events if
 
 Returns: number of events removed from the queue.
 
-#### spnav_x11_event
+#### spnav\_x11\_event
 
 Function prototype: `int spnav_x11_event(const XEvent *xev, spnav_event *sev)`
 
@@ -299,7 +312,7 @@ The functions in this section only work over the native spacenav protocol v1 or
 later, and will fail if the connection is using the X11 magellan protocol, or
 the spacenav protocol v0 (spacenavd <= 0.8).
 
-#### spnav_dev_name
+#### spnav\_dev\_name
 
 Function prototype: `int spnav_dev_name(char *buf, int bufsz)`
 
@@ -318,7 +331,7 @@ following code:
 
 Returns: length of the device name, or -1 on failure.
 
-#### spnav_dev_path
+#### spnav\_dev\_path
 
 Function protoype: `int spnav_dev_path(char *buf, int bufsz)`
 
@@ -328,7 +341,7 @@ work in libspnav.
 
 Returns: length of the path string, or -1 on failure.
 
-#### spnav_dev_buttons
+#### spnav\_dev\_buttons
 
 Function prototype: `int spnav_dev_buttons(void)`
 
@@ -338,7 +351,7 @@ returned.
 
 Returns: number of device buttons, or 2 (default) on failure.
 
-#### spnav_dev_axes
+#### spnav\_dev\_axes
 
 Function prototype: `int spnav_dev_axes(void)`
 
@@ -348,7 +361,7 @@ returned.
 
 Returns: number of device axes, or 6 (default) on failure.
 
-#### spnav_dev_usbid
+#### spnav\_dev\_usbid
 
 Function prototype: `int spnav_dev_usbid(unsigned int *vendor, unsigned int *product)`
 
@@ -358,7 +371,7 @@ of if no device is detected.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_dev_type
+#### spnav\_dev\_type
 
 Function prototype: `int spnav_dev_type(void)`
 
@@ -374,7 +387,7 @@ Returns: device type on success, -1 on failure.
 A number of helper utility functions for common tasks needed by most 3D programs
 using 6dof input.
 
-#### spnav_posrot_init
+#### spnav\_posrot\_init
 
 Function prototype: `void spnav_posrot_init(struct spnav_posrot *pr)`
 
@@ -390,7 +403,7 @@ contains a position vector, and a rotation quaternion:
 This function initializes the vector to 0, and the quaternion to an identity
 unit quaternion (1 + 0i + 0j + 0k), ready to start accumulating motion inputs.
 
-#### spnav_posrot_moveobj
+#### spnav\_posrot\_moveobj
 
 Function prototype: `void spnav_posrot_moveobj(struct spnav_posrot *pr, struct spnav_event_motion *ev)`
 
@@ -398,7 +411,7 @@ Apply position and rotation inputs from an spnav motion event, in a way suitable
 for manipulating a 3D object. Use in conjunction with `spnav_matrix_obj` to
 later extract a model matrix from the accumulated position/rotation.
 
-#### spnav_posrot_moveview
+#### spnav\_posrot\_moveview
 
 Function prototype: `void spnav_posrot_moveview(struct spnav_posrot *pr, struct spnav_event_motion *ev)`
 
@@ -407,7 +420,7 @@ for manipulating the view for flying through a 3D scene. Use in conjunction with
 `spnav_matrix_view` to later extract a view matrix from the accumulated
 position/rotation.
 
-#### spnav_matrix_obj
+#### spnav\_matrix\_obj
 
 Function prototype: `void spnav_matrix_obj(float *mat, struct spnav_posrot *pr)`
 
@@ -418,7 +431,7 @@ inputs.
 The first argument is a pointer to an array of 16 floats, where the matrix is
 written. The matrix is in the order expected by OpenGL.
 
-#### spnav_matrix_view
+#### spnav\_matrix\_view
 
 Function prototype: `void spnav_matrix_view(float *mat, struct spnav_posrot *pr)`
 
@@ -448,7 +461,7 @@ spacenavd configuration file, which is done by calling `spnav_cfg_save`.
 Finally these functions, similarly to the device queries above, only work over
 the native spacenav protocol v1 or later.
 
-#### spnav_cfg_reset
+#### spnav\_cfg\_reset
 
 Function prototype: `int spnav_cfg_reset(void)`
 
@@ -456,7 +469,7 @@ Reset all settings to their default values.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_restore
+#### spnav\_cfg\_restore
 
 Function prototype: `int spnav_cfg_restore(void)`
 
@@ -465,7 +478,7 @@ values defined there.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_save
+#### spnav\_cfg\_save
 
 Function prototype: `int spnav_cfg_save(void)`
 
@@ -474,7 +487,7 @@ required to make any changes perists across spacenavd restarts.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_set_sens
+#### spnav\_cfg\_set\_sens
 
 Function prototype: `int spnav_cfg_set_sens(float s)`
 
@@ -482,7 +495,7 @@ Set the global sensitivity for all motion axes (default: 1.0).
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_sens
+#### spnav\_cfg\_get\_sens
 
 Function prototype: `float spnav_cfg_get_sens(void)`
 
@@ -490,7 +503,7 @@ Get the global sensitivity for all motion axes.
 
 Returns: sensitivity on success, < 0.0 on failure
 
-#### spnav_cfg_set_axis_sens
+#### spnav\_cfg\_set\_axis\_sens
 
 Function prototype: `int spnav_cfg_set_axis_sens(const float *svec)`
 
@@ -501,7 +514,7 @@ less than 1 decrease it.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_axis_sens
+#### spnav\_cfg\_get\_axis\_sens
 
 Function prototype: `int spnav_cfg_get_axis_sens(float *svec)`
 
@@ -510,7 +523,7 @@ for all 6 input axes there.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_set_invert
+#### spnav\_cfg\_set\_invert
 
 Function prototype: `int spnav_cfg_set_invert(int invbits)`
 
@@ -519,7 +532,7 @@ Bit 0 corresponds to TX, bit 1 to TY, and so on.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_invert
+#### spnav\_cfg\_get\_invert
 
 Function prototype: `int spnav_cfg_get_invert(void)`
 
@@ -528,7 +541,7 @@ inverted. Bit 0 corresponds to TX, bit 1 to TY and so on.
 
 Returns: invert bitmaks on success, -1 on failure.
 
-#### spnav_cfg_set_deadzone
+#### spnav\_cfg\_set\_deadzone
 
 Function prototype: `int spnav_cfg_set_deadzone(int devaxis, int delta)`
 
@@ -539,7 +552,7 @@ by remapping.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_deadzone
+#### spnav\_cfg\_get\_deadzone
 
 Function prototype: `int spnav_cfg_get_deadzone(int devaxis)`
 
@@ -549,7 +562,7 @@ by remapping.
 
 Returns: deadzone on success, -1 on failure.
 
-#### spnav_cfg_set_axismap
+#### spnav\_cfg\_set\_axismap
 
 Function prototype: `int spnav_cfg_set_axismap(int devaxis, int map)`
 
@@ -560,7 +573,7 @@ axis, you can map it to -1.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_axismap
+#### spnav\_cfg\_get\_axismap
 
 Function prototype: `int spnav_cfg_get_axismap(int devaxis)`
 
@@ -569,7 +582,7 @@ Returns the input axis mapping for the *device axis* `devaxis`. See
 
 Returns: axis mapping on success, -1 on failure or if the axis in not mapped.
 
-#### spnav_cfg_set_bnmap
+#### spnav\_cfg\_set\_bnmap
 
 Function prototype: `int spnav_cfg_set_bnmap(int devbn, int map)`
 
@@ -581,7 +594,7 @@ button mapping.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_bnmap
+#### spnav\_cfg\_get\_bnmap
 
 Function prototype: `int spnav_cfg_get_bnmap(int devbn)`
 
@@ -590,7 +603,7 @@ Returns the input button mapped to the device button `devbn`. See
 
 Returns: button mapping on success, -1 on failure or if unmapped.
 
-#### spnav_cfg_set_bnaction
+#### spnav\_cfg\_set\_bnaction
 
 Function prototype: `int spnav_cfg_set_bnaction(int devbn, int act)`
 
@@ -605,7 +618,7 @@ value returned by `spnav_dev_buttons`-1. Actions are one of the following:
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_bnaction
+#### spnav\_cfg\_get\_bnaction
 
 Function prototype: `int spnav_cfg_get_bnaction(int devbn)`
 
@@ -614,7 +627,7 @@ Returns the action mapped to the device button `devbn`. See
 
 Returns: action mapping on success, -1 on failure.
 
-#### spnav_cfg_set_kbmap
+#### spnav\_cfg\_set\_kbmap
 
 Function prototype: `int spnav_cfg_set_kbmap(int devbn, int key)`
 
@@ -628,7 +641,7 @@ default), and will be unreliable if spacenavd is compiled without XTEST support.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_kbmap
+#### spnav\_cfg\_get\_kbmap
 
 Function prototype: `int spnav_cfg_get_kbmap(int devbn)`
 
@@ -637,7 +650,7 @@ Returns the X11 keysym mapped to the device button `devbn`. See
 
 Returns: keysym mapping on success, -1 on failure.
 
-#### spnav_cfg_set_swapyz
+#### spnav\_cfg\_set\_swapyz
 
 Function prototype: `int spnav_cfg_set_swapyz(int swap)`
 
@@ -645,13 +658,13 @@ Enable or disable swapping of the translation and rotation Y and Z axes.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_swapyz
+#### spnav\_cfg\_get\_swapyz
 
 Function prototype: `int spnav_cfg_get_swapyz(void)`
 
 Returns: 0 if the Y-Z axes are not swapped, 1 if they are, -1 on failure.
 
-#### spnav_cfg_set_led
+#### spnav\_cfg\_set\_led
 
 Function prototype: `int spnav_cfg_set_led(int mode)`
 
@@ -665,7 +678,7 @@ are connected to spacenavd.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_led
+#### spnav\_cfg\_get\_led
 
 Function prototype: `int spnav_cfg_get_led(void)`
 
@@ -674,7 +687,7 @@ Returns the LED mode for devices with LEDs around the puck. See
 
 Returns: LED mode on success, -1 on failure.
 
-#### spnav_cfg_set_grab
+#### spnav\_cfg\_set\_grab
 
 Function prototype: `int spnav_cfg_set_grab(int grab)`
 
@@ -686,7 +699,7 @@ exclusive access grab setting, or 0 to disable it.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_grab
+#### spnav\_cfg\_get\_grab
 
 Function prototype: `int spnav_cfg_get_grab(void)`
 
@@ -695,7 +708,7 @@ details.
 
 Returns: exclusive device grab setting on success, -1 on failure.
 
-#### spnav_cfg_set_serial
+#### spnav\_cfg\_set\_serial
 
 Function prototype: `int spnav_cfg_set_serial(const char *devpath)`
 
@@ -708,7 +721,7 @@ a TTY character device, otherwise it is ignored.
 
 Returns: 0 on success, -1 on failure.
 
-#### spnav_cfg_get_serial
+#### spnav\_cfg\_get\_serial
 
 Function prototype: `int spnav_cfg_get_serial(char *buf, int bufsz)`
 
@@ -720,3 +733,15 @@ Returns: serial device path length on success, -1 on failure.
 
 Magellan API
 ------------
+
+No detailed documentation is currently available for the Magellan API wrapper.
+It is however rather simple, so go ahead and browse through the
+`spnav_magellan.h` header file if you want to know more.
+
+New programs are discouraged from using the Magellan API wrapper. Everything
+that can be done with it, can also be done with the regular libspnav API; it is
+after all just as thin compatibility layer on top of the libspnav API.
+
+It is **not** necessary to use the Magellan API to achieve compatibility with
+the proprietary 3Dconnexion driver; using the libspnav API with `spnav_x11_open`
+makes your program compatible with it.
