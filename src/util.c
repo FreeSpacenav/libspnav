@@ -83,7 +83,7 @@ void spnav_posrot_moveview(struct spnav_posrot *pr, const struct spnav_event_mot
 	pr->pos[2] += trans[2];
 }
 
-void spnav_matrix_obj(float *mat, struct spnav_posrot *pr)
+void spnav_matrix_obj(float *mat, const struct spnav_posrot *pr)
 {
 	float tmp[16];
 	mat4_quat(mat, pr->rot);
@@ -91,7 +91,7 @@ void spnav_matrix_obj(float *mat, struct spnav_posrot *pr)
 	mat4_mul(mat, tmp);
 }
 
-void spnav_matrix_view(float *mat, struct spnav_posrot *pr)
+void spnav_matrix_view(float *mat, const struct spnav_posrot *pr)
 {
 	float tmp[16];
 	mat4_translation(mat, pr->pos[0], pr->pos[1], pr->pos[2]);

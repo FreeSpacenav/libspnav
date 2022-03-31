@@ -267,22 +267,26 @@ struct spnav_posrot {
 };
 
 void spnav_posrot_init(struct spnav_posrot *pr);
-void spnav_posrot_moveobj(struct spnav_posrot *pr, const struct spnav_event_motion *mev);
-void spnav_posrot_moveview(struct spnav_posrot *pr, const struct spnav_event_motion *mev);
+void spnav_posrot_moveobj(struct spnav_posrot *pr, const struct spnav_event_motion *ev);
+void spnav_posrot_moveview(struct spnav_posrot *pr, const struct spnav_event_motion *ev);
 
-/* Construct a 4x4 homogeneous transformation matrix, representing the
- * orientation defined by a quaternion and the position defined by a 3-vector.
- * Useful for manipulating objects with 6dof input. Use in conjunction with
- * spnav_posrot_moveobj, to accumulate motion inputs.
+/* Construct a 4x4 homogeneous transformation matrix from the `spnav_posrot`
+ * structure, suitable for use as a model/world matrix to position and orient a
+ * 3D object. Use in conjunction with `spnav_posrot_moveobj` to accumulate
+ * motion inputs.
+ * The first argument is a pointer to an array of 16 floats, where the matrix is
+ * written. The matrix is in the order expected by OpenGL.
  */
-void spnav_matrix_obj(float *mat, struct spnav_posrot *pr);
+void spnav_matrix_obj(float *mat, const struct spnav_posrot *pr);
 
-/* Construct a 4x4 homogeneous transformation matrix, with the inverse of the
- * orientation defined by a quaternion and the position defined by a 3-vector.
- * Useful for as view matrix for 6dof-controlled flight in 3D space. Use in
- * conjunction with spnav_posrot_moveview, to accumulate motion inputs.
+/* Construct a 4x4 homogeneous transformation matrix from the `spnav_posrot`
+ * structure, suitable for use as a view matrix for 6dof-controllef flight in 3D
+ * space. Use in conjunction with `spnav_posrot_moveview` to accumulate motion
+ * inputs.
+ * The first argument is a pointer to an array of 16 floats, where the matrix is
+ * written. The matrix is in the order expected by OpenGL.
  */
-void spnav_matrix_view(float *mat, struct spnav_posrot *pr);
+void spnav_matrix_view(float *mat, const struct spnav_posrot *pr);
 
 
 /* Configuration API
