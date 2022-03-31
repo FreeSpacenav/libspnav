@@ -1,4 +1,4 @@
-/* This example demonstrates how to use libspnav to get space navigator input,
+/* This example demonstrates how to use libspnav to get 6dof input,
  * and use that to rotate and translate a 3D cube. The magellan X11 protocol is
  * used (spnav_x11_open) which is compatible with both spacenavd and
  * 3Dconnexion's 3dxsrv.
@@ -15,7 +15,6 @@
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include <spnav.h>
-#include "vmath.h"
 
 #define SQ(x)	((x) * (x))
 
@@ -32,10 +31,15 @@ Atom wm_prot, wm_del_win;
 GLXContext ctx;
 Window win;
 
-vec3_t pos = {0, 0, -6};
-quat_t rot = {0, 0, 0, 1};	/* that's 1 + 0i + 0j + 0k */
+/* XXX: posrot contains a position vector and an orientation quaternion, and
+ * can be used with the spnav_posrot_moveobj function to accumulate input
+ * motions, and then with spnav_matrix_obj to create a transformation matrix.
+ * See util.c in the libspnav source code for implementation details.
+ */
+struct spnav_posrot posrot;
 
 int redisplay;
+
 
 int main(void)
 {
@@ -48,13 +52,15 @@ int main(void)
 		return 1;
 	}
 
-	/* XXX: This actually registers our window with the driver for receiving
-	 * motion/button events through the 3dxsrv-compatible X11 protocol.
+	/* XXX: spnav_x11_open registers our window with the driver for receiving
+	 * motion/button events through the 3dxsrv-compatible X11 magellan protocol.
 	 */
 	if(spnav_x11_open(dpy, win) == -1) {
 		fprintf(stderr, "failed to connect to the space navigator daemon\n");
 		return 1;
 	}
+	/* XXX: initialize the position vector & orientation quaternion */
+	spnav_posrot_init(&posrot);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -167,16 +173,17 @@ void set_window_title(const char *title)
 
 void redraw(void)
 {
-	mat4_t xform;
-
-	quat_to_mat(xform, rot);
+	float xform[16];
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glTranslatef(pos.x, pos.y, pos.z);
-	glMultTransposeMatrixf((float*)xform);
+	glTranslatef(0, 0, -6);	/* view matrix, push back to see the cube */
+
+	/* XXX convert the accumulated position/rotation into a 4x4 model matrix */
+	spnav_matrix_obj(xform, &posrot);
+	glMultMatrixf(xform);		/* concatenate our computed model matrix */
 
 	draw_cube();
 
@@ -257,24 +264,17 @@ int handle_event(XEvent *xev)
 		if(spnav_x11_event(xev, &spev)) {
 			/* if so deal with motion and button events */
 			if(spev.type == SPNAV_EVENT_MOTION) {
-				/* apply axis/angle rotation to the quaternion */
-				if(spev.motion.rx || spev.motion.ry || spev.motion.rz) {
-					float axis_len = sqrt(SQ(spev.motion.rx) + SQ(spev.motion.ry) + SQ(spev.motion.rz));
-					rot = quat_rotate(rot, axis_len * 0.001, -spev.motion.rx / axis_len,
-							-spev.motion.ry / axis_len, spev.motion.rz / axis_len);
-				}
-
-				/* add translation */
-				pos.x += spev.motion.x * 0.001;
-				pos.y += spev.motion.y * 0.001;
-				pos.z -= spev.motion.z * 0.001;
+				/* XXX use the spnav_posrot_moveobj utility function to
+				 * accumulate motion inputs into the cube's position vector and
+				 * orientation quaternion.
+				 */
+				spnav_posrot_moveobj(&posrot, &spev.motion);
 
 				redisplay = 1;
 			} else {
-				/* on button press, reset the cube */
+				/* XXX on button press, reset the cube position/orientation */
 				if(spev.button.press) {
-					pos = v3_cons(0, 0, -6);
-					rot = quat_cons(1, 0, 0, 0);
+					spnav_posrot_init(&posrot);
 
 					redisplay = 1;
 				}
