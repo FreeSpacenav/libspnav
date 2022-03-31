@@ -49,9 +49,9 @@ Installation
 ------------
 To build and install libspnav, simply run:
 
-   ./configure
-   make
-   make install
+    ./configure
+    make
+    make install
 
 Most likely the `make install` part will need to be executed as root, if you're
 installing libspnav system-wide, which is the common case
