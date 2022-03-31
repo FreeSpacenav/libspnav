@@ -1,4 +1,4 @@
-obj = fly.o
+obj = fly.o xwin.o
 bin = fly
 
 CC ?= gcc

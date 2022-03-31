@@ -1,9 +1,6 @@
 /* This example demonstrates how to use 6-dof input for controlling the camera
  * to fly around a scene. The native spacenav protocol is used, to also
  * demonstrate how to integrate input from libspnav in an event loop.
- *
- * The code is a bit cluttered with X11 and GLX calls, so the interesting bits
- * are marked with XXX comments.
  */
 
 #include <stdio.h>
@@ -16,28 +13,28 @@
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include <spnav.h>
+#include "xwin.h"
 
-int create_gfx(int xsz, int ysz);
-void destroy_gfx(void);
-void set_window_title(const char *title);
+#define GRID_REP	60
+#define GRID_SZ		200
+
 void gen_textures(void);
+void gen_scene(void);
 void redraw(void);
 void draw_scene(void);
-void draw_box(float xsz, float ysz, float zsz);
-int handle_xevent(XEvent *xev);
 void handle_spnav_event(spnav_event *ev);
+int handle_xevent(XEvent *xev);
+void draw_box(float xsz, float ysz, float zsz);
 
-
-Display *dpy;
-Atom wm_prot, wm_del_win;
-GLXContext ctx;
-Window win;
-
+/* XXX: posrot contains a position vector and an orientation quaternion, and
+ * can be used with the spnav_posrot_moveobj function to accumulate input
+ * motions, and then with spnav_matrix_obj to create a transformation matrix.
+ * See util.c in the libspnav source code for implementation details.
+ */
 struct spnav_posrot posrot;
 
-int redisplay;
-
 unsigned int grid_tex, box_tex;
+unsigned int scene;
 
 
 int main(void)
@@ -49,7 +46,7 @@ int main(void)
 		return 1;
 	}
 
-	if(create_gfx(1024, 768) == -1) {
+	if(create_xwin("libspnav fly", 1024, 768) == -1) {
 		return 1;
 	}
 
@@ -58,12 +55,18 @@ int main(void)
 		fprintf(stderr, "failed to connect to the spacenav driver\n");
 		return 1;
 	}
-
+	/* XXX: initialize the position vector & orientation quaternion */
 	spnav_posrot_init(&posrot);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+
+	glFogi(GL_FOG_MODE, GL_LINEAR);
+	glFogf(GL_FOG_START, GRID_SZ / 4);
+	glFogf(GL_FOG_END, GRID_SZ);
+
 	gen_textures();
+	gen_scene();
 
 	/* XXX: grab the Xlib socket and the libspnav socket. we'll need them in the
 	 * select loop to wait for input from either source.
@@ -102,127 +105,40 @@ int main(void)
 			}
 		}
 
-		if(redisplay) {
+		if(redisplay_pending) {
+			redisplay_pending = 0;
 			redraw();
-			redisplay = 0;
 		}
 	}
 
 end:
-	destroy_gfx();
+	glDeleteTextures(1, &grid_tex);
+	destroy_xwin();
 	spnav_close();
 	return 0;
 }
 
-int create_gfx(int xsz, int ysz)
-{
-	int scr;
-	Window root;
-	XVisualInfo *vis;
-	XSetWindowAttributes xattr;
-	unsigned int events;
-	XClassHint class_hint;
-
-	int attr[] = {
-		GLX_RGBA, GLX_DOUBLEBUFFER,
-		GLX_RED_SIZE, 8,
-		GLX_GREEN_SIZE, 8,
-		GLX_BLUE_SIZE, 8,
-		GLX_DEPTH_SIZE, 24,
-		None
-	};
-
-	wm_prot = XInternAtom(dpy, "WM_PROTOCOLS", False);
-	wm_del_win = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
-
-	scr = DefaultScreen(dpy);
-	root = RootWindow(dpy, scr);
-
-	if(!(vis = glXChooseVisual(dpy, scr, attr))) {
-		fprintf(stderr, "requested GLX visual is not available\n");
-		return -1;
-	}
-
-	if(!(ctx = glXCreateContext(dpy, vis, 0, True))) {
-		fprintf(stderr, "failed to create GLX context\n");
-		XFree(vis);
-		return -1;
-	}
-
-	xattr.background_pixel = xattr.border_pixel = BlackPixel(dpy, scr);
-	xattr.colormap = XCreateColormap(dpy, root, vis->visual, AllocNone);
-
-	if(!(win = XCreateWindow(dpy, root, 0, 0, xsz, ysz, 0, vis->depth, InputOutput,
-					vis->visual, CWColormap | CWBackPixel | CWBorderPixel, &xattr))) {
-		fprintf(stderr, "failed to create X window\n");
-		return -1;
-	}
-	XFree(vis);
-
-	/* set the window event mask */
-	events = ExposureMask | StructureNotifyMask | KeyPressMask | KeyReleaseMask |
-		ButtonReleaseMask |	ButtonPressMask | PointerMotionMask;
-	XSelectInput(dpy, win, events);
-
-	XSetWMProtocols(dpy, win, &wm_del_win, 1);
-
-	set_window_title("libspnav cube");
-
-	class_hint.res_name = "cube";
-	class_hint.res_class = "cube";
-	XSetClassHint(dpy, win, &class_hint);
-
-	if(glXMakeCurrent(dpy, win, ctx) == False) {
-		fprintf(stderr, "glXMakeCurrent failed\n");
-		glXDestroyContext(dpy, ctx);
-		XDestroyWindow(dpy, win);
-		return -1;
-	}
-
-	XMapWindow(dpy, win);
-	XFlush(dpy);
-
-	return 0;
-}
-
-void destroy_gfx(void)
-{
-	glDeleteTextures(1, &grid_tex);
-
-	glXDestroyContext(dpy, ctx);
-	XDestroyWindow(dpy, win);
-	glXMakeCurrent(dpy, None, 0);
-}
-
-void set_window_title(const char *title)
-{
-	XTextProperty wm_name;
-
-	XStringListToTextProperty((char**)&title, 1, &wm_name);
-	XSetWMName(dpy, win, &wm_name);
-	XSetWMIconName(dpy, win, &wm_name);
-	XFree(wm_name.value);
-}
-
-
 void gen_textures(void)
 {
-	int i, j;
-	static unsigned char grid_pixels[128 * 128 * 3];
+	int i, j, r, g, b;
+	static unsigned char pixels[128 * 128 * 3];
 	unsigned char *pptr;
 
-	pptr = grid_pixels;
+	pptr = pixels;
 	for(i=0; i<128; i++) {
 		float dy = abs(i - 64) / 64.0f;
 		for(j=0; j<128; j++) {
 			float dx = abs(j - 64) / 64.0f;
 			float d = dx > dy ? dx : dy;
-			float val = pow(d, 8.0);
-			if(val > 1.0f) val = 1.0f;
+			float val = pow(d * 1.04f, 10.0) * 1.4f;
 
-			*pptr++ = (int)(214.0f * val);
-			*pptr++ = (int)(76.0f * val);
-			*pptr++ = (int)(255.0f * val);
+			r = (int)(214.0f * val);
+			g = (int)(76.0f * val);
+			b = (int)(255.0f * val);
+
+			*pptr++ = r > 255 ? 255 : r;
+			*pptr++ = g > 255 ? 255 : g;
+			*pptr++ = b > 255 ? 255 : b;
 		}
 	}
 
@@ -230,28 +146,53 @@ void gen_textures(void)
 	glBindTexture(GL_TEXTURE_2D, grid_tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, 128, 128, GL_RGB, GL_UNSIGNED_BYTE, grid_pixels);
+	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, 128, 128, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+	pptr = pixels;
+	for(i=0; i<128; i++) {
+		int row = i >> 5;
+		float dy = ((i - 12) & 0x1f) / 16.0f;
+		for(j=0; j<128; j++) {
+			int col = j >> 5;
+			float dx = ((j - 12) & 0x1f) / 16.0f;
+			float d = dx > dy ? dx : dy;
+			int xor = (col ^ row) & 0xf;
+
+			r = d < 0.5f ? (xor << 4) + 20 : 0;
+			g = d < 0.5f ? (xor << 4) + 20 : 0;
+			b = d < 0.5f ? (xor << 4) + 20 : 0;
+
+			*pptr++ = r > 255 ? 255 : r;
+			*pptr++ = g > 255 ? 255 : g;
+			*pptr++ = b > 255 ? 255 : b;
+		}
+	}
+
+	glGenTextures(1, &box_tex);
+	glBindTexture(GL_TEXTURE_2D, box_tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, 128, 128, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 }
 
-#define GRID_REP	60
-#define GRID_SZ		200
-
-void redraw(void)
+void gen_scene(void)
 {
-	float xform[16];
+	int i, j;
+	float x, y, h;
 
-	/* XXX convert the accumulated position/rotation into a 4x4 view matrix */
-	spnav_matrix_view(xform, &posrot);
+	srand(0);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	scene = glGenLists(1);
+	glNewList(scene, GL_COMPILE);
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glMultMatrixf(xform);
-
-	glBindTexture(GL_TEXTURE_2D, grid_tex);
 	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_FOG);
+
+	/* grid */
+	glBindTexture(GL_TEXTURE_2D, grid_tex);
+
 	glBegin(GL_QUADS);
+	glColor3f(1, 1, 1);
 	glTexCoord2f(0, 0);
 	glVertex3f(-GRID_SZ, 0, GRID_SZ);
 	glTexCoord2f(GRID_REP, 0);
@@ -261,103 +202,73 @@ void redraw(void)
 	glTexCoord2f(0, GRID_REP);
 	glVertex3f(-GRID_SZ, 0, -GRID_SZ);
 	glEnd();
-	glDisable(GL_TEXTURE_2D);
 
-	draw_box(1, 1, 1);
+	/* buildings */
+	glBindTexture(GL_TEXTURE_2D, box_tex);
+	for(i=0; i<8; i++) {
+		for(j=0; j<8; j++) {
+			x = (j - 4.0f + 0.5f * (float)rand() / RAND_MAX) * 20.0f;
+			y = (i - 4.0f + 0.5f * (float)rand() / RAND_MAX) * 20.0f;
+			h = (3.0f + (float)rand() / RAND_MAX) * 6.0f;
+
+			glPushMatrix();
+			glTranslatef(x, h/2, y);
+			glMatrixMode(GL_TEXTURE);
+			glLoadIdentity();
+			glScalef(3, h/4, 1);
+
+			draw_box(6, h, 6);
+
+			glLoadIdentity();
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+		}
+	}
+
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_FOG);
+
+	/* skydome */
+	glBegin(GL_TRIANGLE_FAN);
+	glColor3f(0.07, 0.1, 0.4);
+	glVertex3f(0, GRID_SZ/5, 0);
+	glColor3f(0.5, 0.2, 0.05);
+	glVertex3f(-GRID_SZ, 0, -GRID_SZ);
+	glVertex3f(GRID_SZ, 0, -GRID_SZ);
+	glVertex3f(GRID_SZ, 0, GRID_SZ);
+	glVertex3f(-GRID_SZ, 0, GRID_SZ);
+	glVertex3f(-GRID_SZ, 0, -GRID_SZ);
+	glEnd();
+
+	glEndList();
+}
+
+void redraw(void)
+{
+	float xform[16];
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	/* XXX convert the accumulated position/rotation into a 4x4 view matrix */
+	spnav_matrix_view(xform, &posrot);
+	glMultMatrixf(xform);		/* concatenate our computed view matrix */
+	glTranslatef(0, -5, 0);		/* move the default view a bit higher above the ground */
+
+	glCallList(scene);
 
 	glXSwapBuffers(dpy, win);
 }
 
-void draw_scene(void)
+void reshape(int x, int y)
 {
-}
+	glViewport(0, 0, x, y);
 
-void draw_box(float xsz, float ysz, float zsz)
-{
-	xsz /= 2;
-	ysz /= 2;
-	zsz /= 2;
-
-	glBegin(GL_QUADS);
-	/* face +Z */
-	glNormal3f(0, 0, 1);
-	glVertex3f(-xsz, -ysz, zsz);
-	glVertex3f(xsz, -ysz, zsz);
-	glVertex3f(xsz, ysz, zsz);
-	glVertex3f(-xsz, ysz, zsz);
-	/* face +X */
-	glNormal3f(1, 0, 0);
-	glVertex3f(xsz, -ysz, zsz);
-	glVertex3f(xsz, -ysz, -zsz);
-	glVertex3f(xsz, ysz, -zsz);
-	glVertex3f(xsz, ysz, zsz);
-	/* face -Z */
-	glNormal3f(0, 0, -1);
-	glVertex3f(xsz, -ysz, -zsz);
-	glVertex3f(-xsz, -ysz, -zsz);
-	glVertex3f(-xsz, ysz, -zsz);
-	glVertex3f(xsz, ysz, -zsz);
-	/* face -X */
-	glNormal3f(-1, 0, 0);
-	glVertex3f(-xsz, -ysz, -zsz);
-	glVertex3f(-xsz, -ysz, zsz);
-	glVertex3f(-xsz, ysz, zsz);
-	glVertex3f(-xsz, ysz, -zsz);
-	/* face +Y */
-	glNormal3f(0, 1, 0);
-	glVertex3f(-xsz, ysz, zsz);
-	glVertex3f(xsz, ysz, zsz);
-	glVertex3f(xsz, ysz, -zsz);
-	glVertex3f(-xsz, ysz, -zsz);
-	/* face -Y */
-	glNormal3f(0, -1, 0);
-	glVertex3f(-xsz, -ysz, -zsz);
-	glVertex3f(xsz, -ysz, -zsz);
-	glVertex3f(xsz, -ysz, zsz);
-	glVertex3f(-xsz, -ysz, zsz);
-	glEnd();
-}
-
-int handle_xevent(XEvent *xev)
-{
-	int x, y;
-	KeySym sym;
-
-	switch(xev->type) {
-	case Expose:
-		redisplay = 1;
-		break;
-
-	case ClientMessage:
-		if(xev->xclient.message_type == wm_prot) {
-			if(xev->xclient.data.l[0] == wm_del_win) {
-				return 1;
-			}
-		}
-		break;
-
-	case KeyPress:
-		sym = XLookupKeysym((XKeyEvent*)&xev->xkey, 0);
-		if((sym & 0xff) == 27) {
-			return 1;
-		}
-		break;
-
-	case ConfigureNotify:
-		x = xev->xconfigure.width;
-		y = xev->xconfigure.height;
-
-		glViewport(0, 0, x, y);
-
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		gluPerspective(50.0, (float)x / (float)y, 0.5, 500.0);
-		break;
-
-	default:
-		break;
-	}
-	return 0;
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(50.0, (float)x / (float)y, 0.5, 500.0);
 }
 
 void handle_spnav_event(spnav_event *ev)
@@ -382,7 +293,7 @@ void handle_spnav_event(spnav_event *ev)
 		 * anything by processing a whole queue of relative motions.
 		 */
 		spnav_remove_events(SPNAV_EVENT_MOTION);
-		redisplay = 1;
+		redisplay_pending = 1;
 		break;
 
 	case SPNAV_EVENT_BUTTON:
@@ -390,10 +301,58 @@ void handle_spnav_event(spnav_event *ev)
 		 * reset the view
 		 */
 		spnav_posrot_init(&posrot);
-		redisplay = 1;
+		redisplay_pending = 1;
 		break;
 
 	default:
 		break;
 	}
+}
+
+void draw_box(float xsz, float ysz, float zsz)
+{
+	xsz /= 2;
+	ysz /= 2;
+	zsz /= 2;
+
+	glBegin(GL_QUADS);
+	/* face +Z */
+	glNormal3f(0, 0, 1);
+	glTexCoord2f(0, 0); glVertex3f(-xsz, -ysz, zsz);
+	glTexCoord2f(1, 0); glVertex3f(xsz, -ysz, zsz);
+	glTexCoord2f(1, 1); glVertex3f(xsz, ysz, zsz);
+	glTexCoord2f(0, 1); glVertex3f(-xsz, ysz, zsz);
+	/* face +X */
+	glNormal3f(1, 0, 0);
+	glTexCoord2f(0, 0); glVertex3f(xsz, -ysz, zsz);
+	glTexCoord2f(1, 0); glVertex3f(xsz, -ysz, -zsz);
+	glTexCoord2f(1, 1); glVertex3f(xsz, ysz, -zsz);
+	glTexCoord2f(0, 1); glVertex3f(xsz, ysz, zsz);
+	/* face -Z */
+	glNormal3f(0, 0, -1);
+	glTexCoord2f(0, 0); glVertex3f(xsz, -ysz, -zsz);
+	glTexCoord2f(1, 0); glVertex3f(-xsz, -ysz, -zsz);
+	glTexCoord2f(1, 1); glVertex3f(-xsz, ysz, -zsz);
+	glTexCoord2f(0, 1); glVertex3f(xsz, ysz, -zsz);
+	/* face -X */
+	glNormal3f(-1, 0, 0);
+	glTexCoord2f(0, 0); glVertex3f(-xsz, -ysz, -zsz);
+	glTexCoord2f(1, 0); glVertex3f(-xsz, -ysz, zsz);
+	glTexCoord2f(1, 1); glVertex3f(-xsz, ysz, zsz);
+	glTexCoord2f(0, 1); glVertex3f(-xsz, ysz, -zsz);
+	/* face +Y */
+	glNormal3f(0, 1, 0);
+	glTexCoord2f(0, 0);
+	glVertex3f(-xsz, ysz, zsz);
+	glVertex3f(xsz, ysz, zsz);
+	glVertex3f(xsz, ysz, -zsz);
+	glVertex3f(-xsz, ysz, -zsz);
+	/* face -Y */
+	glNormal3f(0, -1, 0);
+	glTexCoord2f(0, 0);
+	glVertex3f(-xsz, -ysz, -zsz);
+	glVertex3f(xsz, -ysz, -zsz);
+	glVertex3f(xsz, -ysz, zsz);
+	glVertex3f(-xsz, -ysz, zsz);
+	glEnd();
 }
