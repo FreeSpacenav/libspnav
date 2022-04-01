@@ -50,14 +50,6 @@ OF SUCH DAMAGE.
 static Window get_daemon_window(Display *dpy);
 static int catch_badwin(Display *dpy, XErrorEvent *err);
 
-static int read_event(int s, spnav_event *event);
-static int proc_event(int *data, spnav_event *event);
-
-static void flush_resp(void);
-static int wait_resp(void *buf, int sz, int timeout_ms);
-static int request(int req, struct reqresp *rr, int timeout_ms);
-static int request_str(int req, char *buf, int bufsz, int timeout_ms);
-
 
 static Display *dpy;
 static Window app_win;
@@ -72,6 +64,15 @@ enum {
 #else
 #define IS_OPEN		(sock != -1)
 #endif
+
+static int read_event(int s, spnav_event *event);
+static int proc_event(int *data, spnav_event *event);
+
+static void flush_resp(void);
+static int wait_resp(void *buf, int sz, int timeout_ms);
+static int request(int req, struct reqresp *rr, int timeout_ms);
+static int request_str(int req, char *buf, int bufsz, int timeout_ms);
+
 
 struct event_node {
 	spnav_event event;
