@@ -29,7 +29,7 @@ OF SUCH DAMAGE.
 
 #include <spnav_config.h>
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 #include <X11/Xlib.h>
 #endif
 
@@ -137,7 +137,7 @@ int spnav_remove_events(int type);
 
 
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 /* Opens a connection to the daemon, using the original magellan X11 protocol.
  * Any application using this protocol should be compatible with the proprietary
  * 3D connexion driver too.

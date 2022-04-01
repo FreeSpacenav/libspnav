@@ -43,7 +43,7 @@ OF SUCH DAMAGE.
 /* default socket path */
 #define SPNAV_SOCK_PATH "/var/run/spnav.sock"
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
@@ -166,7 +166,7 @@ success:
 	return 0;
 }
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 int spnav_x11_open(Display *display, Window win)
 {
 	if(IS_OPEN) {
@@ -213,7 +213,7 @@ int spnav_close(void)
 		return 0;
 	}
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 	if(dpy) {
 		spnav_x11_window(DefaultRootWindow(dpy));
 		app_win = 0;
@@ -226,7 +226,7 @@ int spnav_close(void)
 }
 
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 int spnav_x11_window(Window win)
 {
 	int (*prev_xerr_handler)(Display*, XErrorEvent*);
@@ -299,7 +299,7 @@ int spnav_sensitivity(double sens)
 {
 	struct reqresp rr;
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 	if(dpy) {
 		return x11_sensitivity(sens);
 	}
@@ -328,7 +328,7 @@ int spnav_sensitivity(double sens)
 
 int spnav_fd(void)
 {
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 	if(dpy) {
 		return ConnectionNumber(dpy);
 	}
@@ -462,7 +462,7 @@ static int proc_event(int32_t *data, spnav_event *event)
 
 int spnav_wait_event(spnav_event *event)
 {
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 	if(dpy) {
 		for(;;) {
 			XEvent xev;
@@ -485,7 +485,7 @@ int spnav_wait_event(spnav_event *event)
 
 int spnav_poll_event(spnav_event *event)
 {
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 	if(dpy) {
 		if(XPending(dpy)) {
 			XEvent xev;
@@ -507,7 +507,7 @@ int spnav_poll_event(spnav_event *event)
 	return 0;
 }
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 static Bool match_events(Display *dpy, XEvent *xev, char *arg)
 {
 	int evtype = *(int*)arg;
@@ -554,7 +554,7 @@ int spnav_remove_events(int type)
 {
 	int rm_count = 0;
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 	if(dpy) {
 		XEvent xev;
 
@@ -604,7 +604,7 @@ int spnav_remove_events(int type)
 	return 0;
 }
 
-#ifdef USE_X11
+#ifdef SPNAV_USE_X11
 int spnav_x11_event(const XEvent *xev, spnav_event *event)
 {
 	int i;

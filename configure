@@ -116,7 +116,7 @@ echo '#ifndef SPNAV_CONFIG_H_' >src/spnav_config.h
 echo '#define SPNAV_CONFIG_H_' >>src/spnav_config.h
 echo '' >>src/spnav_config.h
 if [ "$X11" = 'yes' ]; then
-	echo '#define USE_X11' >>src/spnav_config.h
+	echo '#define SPNAV_USE_X11' >>src/spnav_config.h
 	echo '' >>src/spnav_config.h
 fi
 echo '#endif	/* SPNAV_CONFIG_H_ */' >>src/spnav_config.h
