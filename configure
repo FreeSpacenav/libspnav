@@ -9,7 +9,7 @@ X11=yes
 VER=`git describe --tags 2>/dev/null`
 
 if [ -z "$VER" ]; then
-	VER=`git rev-parse --short HEAD`
+	VER=`git rev-parse --short HEAD 2>/dev/null`
 	if [ -z "$VER" ]; then
 		VER=v`pwd | grep 'libspnav-[0-9]\+\.' | sed 's/.*libspnav-\(\([0-9]\+\.\)\+[0-9]\+\).*$/\1/'`
 		if [ $VER = v ]; then
