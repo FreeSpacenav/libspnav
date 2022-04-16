@@ -125,7 +125,7 @@ echo '#endif	/* SPNAV_CONFIG_H_ */' >>src/spnav_config.h
 echo 'creating spnav.pc ...'
 pcver=`echo $VER | sed 's/^v//'`
 echo "PREFIX=$PREFIX" >spnav.pc
-cat spnav.pc.in | sed "s/@VERSION@/$pcver/; s/@LIBDIR@/$libdir/" >>spnav.pc
+cat "$srcdir/spnav.pc.in" | sed "s/@VERSION@/$pcver/; s/@LIBDIR@/$libdir/" >>spnav.pc
 
 #done
 echo ''
