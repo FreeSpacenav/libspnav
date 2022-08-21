@@ -43,7 +43,7 @@ $(lib_so): $(obj)
 clean:
 	rm -f $(obj)
 
-.PHONY: cleandist
+.PHONY: distclean
 distclean:
 	rm -f $(obj) $(lib_a) $(lib_so) Makefile
 
