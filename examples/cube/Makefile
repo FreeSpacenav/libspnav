@@ -1,7 +1,7 @@
-obj = cube.o
+obj = cube.o xwin.o
 bin = cube
 
-CC = gcc
+CC ?= gcc
 CFLAGS = -pedantic -Wall -g -I../.. -I../../src -I/usr/local/include
 LDFLAGS = -L../.. -L/usr/local/lib -lX11 -lGL -lGLU -lspnav -lm
 
