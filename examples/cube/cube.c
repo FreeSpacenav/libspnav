@@ -317,6 +317,10 @@ int handle_x11_event(const XEvent *const xev)
 		sym = XLookupKeysym((XKeyEvent*)&xev->xkey, 0);
 		if((sym & 0xff) == 27) {
 			return 1;
+		} else if((sym & 0xff) == 82 || (sym & 0xff) == 114) {
+			spnav_posrot_init(&posrot);
+
+			redisplay = 1;
 		}
 		break;
 
