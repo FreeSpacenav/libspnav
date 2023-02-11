@@ -15,16 +15,18 @@
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include <spnav.h>
+#include <string.h>
 
 #define SQ(x)	((x) * (x))
 
 int create_gfx(int xsz, int ysz);
+void destroy(int is_wayland);
 void destroy_gfx(void);
 void set_window_title(const char *title);
 void redraw(void);
 void draw_cube(void);
-int handle_event(XEvent *xev);
-
+int handle_x11_event(const XEvent *const xev);
+void handle_spnav_event(const spnav_event *const spev);
 
 Display *dpy;
 Atom wm_prot, wm_del_win;
@@ -43,6 +45,8 @@ int redisplay;
 
 int main(void)
 {
+	int is_wayland;
+
 	if(!(dpy = XOpenDisplay(0))) {
 		fprintf(stderr, "failed to connect to the X server");
 		return 1;
@@ -52,13 +56,37 @@ int main(void)
 		return 1;
 	}
 
-	/* XXX: spnav_x11_open registers our window with the driver for receiving
-	 * motion/button events through the 3dxsrv-compatible X11 magellan protocol.
-	 */
-	if(spnav_x11_open(dpy, win) == -1) {
-		fprintf(stderr, "failed to connect to the space navigator daemon\n");
-		return 1;
+	char *xdg_session_type = getenv("XDG_SESSION_TYPE");
+	if (xdg_session_type == NULL) {
+		fprintf(stderr, "define XDG_SESSION_TYPE to detect graphical server");
+	} else {
+		if (!strcmp(xdg_session_type, "tty")) {
+			fprintf(stderr, "run on a graphical environment");
+			return 1;
+		}
+		else if (!strcmp(xdg_session_type, "x11")) {
+			is_wayland = 0;
+		}
+		else if (!strcmp(xdg_session_type, "wayland")) {
+			is_wayland = 1;
+		}
 	}
+
+	if (is_wayland) {
+		if(spnav_open()==-1) {
+			fprintf(stderr, "failed to connect to the space navigator daemon on wayland\n");
+			return 1;
+		}
+	} else {
+		/* XXX: spnav_x11_open registers our window with the driver for receiving
+		 * motion/button events through the 3dxsrv-compatible X11 magellan protocol.
+		 */
+		if(spnav_x11_open(dpy, win) == -1) {
+			fprintf(stderr, "failed to connect to the space navigator daemon on x11\n");
+			return 1;
+		}
+	}
+
 	/* XXX: initialize the position vector & orientation quaternion */
 	spnav_posrot_init(&posrot);
 
@@ -66,15 +94,24 @@ int main(void)
 	glEnable(GL_CULL_FACE);
 
 	for(;;) {
-		XEvent xev;
-		XNextEvent(dpy, &xev);
+		spnav_event spev;
+		while(XPending(dpy)) {
+			XEvent xev;
 
-		if(handle_event(&xev) != 0) {
-			destroy_gfx();
-			XCloseDisplay(dpy);
-			return 0;
+			XNextEvent(dpy, &xev);
+			if (handle_x11_event(&xev) != 0) {
+				destroy(is_wayland);
+				return 0;
+			}
+			while (spnav_x11_event(&xev, &spev)) {
+				handle_spnav_event(&spev);
+			}
 		}
-
+		if (is_wayland) {
+			while (spnav_poll_event(&spev)) {
+				handle_spnav_event(&spev);
+			}
+		}
 		if(redisplay) {
 			redraw();
 			redisplay = 0;
@@ -152,6 +189,16 @@ int create_gfx(int xsz, int ysz)
 	XFlush(dpy);
 
 	return 0;
+}
+
+void destroy(int is_wayland)
+{
+	if (is_wayland) {
+		spnav_close();
+	} else {
+		destroy_gfx();
+		XCloseDisplay(dpy);
+	}
 }
 
 void destroy_gfx(void)
@@ -238,11 +285,10 @@ void draw_cube(void)
 	glEnd();
 }
 
-int handle_event(XEvent *xev)
+int handle_x11_event(const XEvent *const xev)
 {
 	static int win_mapped;
 	KeySym sym;
-	spnav_event spev;
 
 	switch(xev->type) {
 	case MapNotify:
@@ -260,29 +306,7 @@ int handle_event(XEvent *xev)
 		break;
 
 	case ClientMessage:
-		/* XXX check if the event is a spacenav event */
-		if(spnav_x11_event(xev, &spev)) {
-			/* if so deal with motion and button events */
-			if(spev.type == SPNAV_EVENT_MOTION) {
-				/* XXX use the spnav_posrot_moveobj utility function to
-				 * accumulate motion inputs into the cube's position vector and
-				 * orientation quaternion.
-				 */
-				spnav_posrot_moveobj(&posrot, &spev.motion);
-
-				redisplay = 1;
-			} else {
-				/* XXX on button press, reset the cube position/orientation */
-				if(spev.button.press) {
-					spnav_posrot_init(&posrot);
-
-					redisplay = 1;
-				}
-			}
-			/* finally remove any other queued motion events */
-			spnav_remove_events(SPNAV_EVENT_MOTION);
-
-		} else if(xev->xclient.message_type == wm_prot) {
+		if(xev->xclient.message_type == wm_prot) {
 			if(xev->xclient.data.l[0] == wm_del_win) {
 				return 1;
 			}
@@ -313,4 +337,25 @@ int handle_event(XEvent *xev)
 		break;
 	}
 	return 0;
+}
+
+void handle_spnav_event(const spnav_event *const spev) {
+	if(spev->type == SPNAV_EVENT_MOTION) {
+		/* XXX use the spnav_posrot_moveobj utility function to
+		 * accumulate motion inputs into the cube's position vector and
+		 * orientation quaternion.
+		 */
+		spnav_posrot_moveobj(&posrot, &spev->motion);
+
+		redisplay = 1;
+	} else {
+		/* XXX on button press, reset the cube position/orientation */
+		if(spev->button.press) {
+			spnav_posrot_init(&posrot);
+
+			redisplay = 1;
+		}
+	}
+	/* finally remove any other queued motion events */
+	spnav_remove_events(SPNAV_EVENT_MOTION);
 }
