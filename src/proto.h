@@ -1,7 +1,11 @@
 #ifndef PROTO_H_
 #define PROTO_H_
 
+#ifdef __sgi
+#include <inttypes.h>
+#else
 #include <stdint.h>
+#endif
 
 /* maximum supported protocol version */
 #define MAX_PROTO_VER	1

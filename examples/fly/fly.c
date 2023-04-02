@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
+#include <unistd.h>
 #include <sys/select.h>
 #include <X11/Xlib.h>
 #include <GL/gl.h>
