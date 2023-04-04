@@ -28,8 +28,8 @@ int handle_xevent(XEvent *xev);
 void draw_box(float xsz, float ysz, float zsz);
 
 /* XXX: posrot contains a position vector and an orientation quaternion, and
- * can be used with the spnav_posrot_moveobj function to accumulate input
- * motions, and then with spnav_matrix_obj to create a transformation matrix.
+ * can be used with the spnav_posrot_moveview function to accumulate input
+ * motions, and then with spnav_matrix_view to create a view matrix.
  * See util.c in the libspnav source code for implementation details.
  */
 struct spnav_posrot posrot;
