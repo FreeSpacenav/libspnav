@@ -298,6 +298,7 @@ static int x11_sensitivity(double sens)
 
 int spnav_sensitivity(double sens)
 {
+	float fval;
 	struct reqresp rr;
 
 #ifdef SPNAV_USE_X11
@@ -306,10 +307,11 @@ int spnav_sensitivity(double sens)
 	}
 #endif
 
+	fval = sens;
+
 	if(proto == 0) {
 		if(sock) {
 			ssize_t bytes;
-			float fval = sens;
 
 			while((bytes = write(sock, &fval, sizeof fval)) <= 0 && errno == EINTR);
 			if(bytes <= 0) {
@@ -320,7 +322,7 @@ int spnav_sensitivity(double sens)
 		return -1;
 	}
 
-	rr.data[0] = *(int*)&sens;
+	rr.data[0] = *(int*)&fval;
 	if(request(REQ_SET_SENS, &rr, TIMEOUT) == -1) {
 		return -1;
 	}
