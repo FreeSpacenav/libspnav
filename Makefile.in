@@ -11,7 +11,7 @@ libpaths = -L/usr/local/lib -L/usr/X11R6/lib
 CC ?= gcc
 AR ?= ar
 CFLAGS = $(opt) $(dbg) -std=c89 $(pic) -pedantic -Wall -fno-strict-aliasing $(incpaths) $(user_cflags)
-LDFLAGS = $(libpaths) $(user_ldflags) $(xlib)
+LDFLAGS = $(libpaths) $(user_ldflags) $(xlib) -lm
 
 ifeq ($(shell uname -s), Darwin)
 	lib_so = libspnav.dylib
