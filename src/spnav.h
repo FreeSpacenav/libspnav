@@ -1,6 +1,6 @@
 /*
 This file is part of libspnav, part of the spacenav project (spacenav.sf.net)
-Copyright (C) 2007-2022 John Tsiombikas <nuclear@member.fsf.org>
+Copyright (C) 2007-2023 John Tsiombikas <nuclear@member.fsf.org>
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -375,6 +375,9 @@ int spnav_cfg_get_grab(void);	/* returns 0:no-grab/1:grab, or -1 on error */
 
 int spnav_cfg_set_serial(const char *devpath);
 int spnav_cfg_get_serial(char *buf, int bufsz);
+
+int spnav_cfg_set_repeat(int msec);
+int spnav_cfg_get_repeat(void);
 
 #ifdef __cplusplus
 }
