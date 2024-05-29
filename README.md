@@ -59,6 +59,8 @@ installing libspnav system-wide, which is the common case
 
 Running `./configure --help` prints available build options.
 
+If you try to build the examples and get a compile error about a missing
+GL header file, you might wanna install `libgl-dev` and `libglu1-mesa-dev`.
 
 License
 -------
