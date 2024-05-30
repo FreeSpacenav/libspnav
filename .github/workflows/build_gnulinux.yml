@@ -1,0 +1,73 @@
+name: GNU/Linux build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install libx11-dev libgl1-mesa-dev libglu1-mesa-dev
+
+    - name: configure
+      run: ./configure
+
+    - name: build
+      run: make
+
+    - name: build examples
+      run: make examples
+
+    - name: stage install
+      run: |
+        DESTDIR=libspnav-gnulinux make install
+        mkdir libspnav-gnulinux/examples
+        cp examples/simple/simple_af_unix libspnav-gnulinux/examples
+        cp examples/simple/simple_x11 libspnav-gnulinux/examples
+        cp examples/cube/cube libspnav-gnulinux/examples
+        cp examples/fly/fly libspnav-gnulinux/examples
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: libspnav-gnulinux
+        path: libspnav-gnulinux
+
+  build-nox11:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: configure
+      run: ./configure --disable-x11
+
+    - name: build
+      run: make
+
+    - name: build examples
+      run: make examples
+
+    - name: stage install
+      run: |
+        DESTDIR=libspnav-gnulinux-nox11 make install
+        mkdir libspnav-gnulinux-nox11/examples
+        cp examples/simple/simple_af_unix libspnav-gnulinux-nox11/examples
+        cp examples/fly/fly libspnav-gnulinux-nox11/examples
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: libspnav-gnulinux-nox11
+        path: libspnav-gnulinux-nox11
+
+
+# vi:ts=2 sts=2 sw=2 expandtab:

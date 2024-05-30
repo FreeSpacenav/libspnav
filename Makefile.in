@@ -72,3 +72,8 @@ uninstall:
 	for i in $(hdr); do rm -f $(DESTDIR)$(PREFIX)/include/$$i; done
 	rm -f $(DESTDIR)$(PREFIX)/share/pkgconfig/spnav.pc
 
+.PHONY: examples
+examples:
+	$(MAKE) -C examples/simple
+	$(MAKE) -C examples/cube
+	$(MAKE) -C examples/fly
