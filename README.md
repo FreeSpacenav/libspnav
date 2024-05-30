@@ -57,7 +57,16 @@ Most likely the `make install` part will need to be executed as root, if you're
 installing libspnav system-wide, which is the common case
 (default prefix is: `/usr/local`).
 
-Running `./configure --help` prints available build options.
+Run `./configure --help` for a list of available build options.
+
+By default libspnav will be compiled with X11 support (and will require Xlib),
+which is necessary for compatibility with the proprietary driver. If you don't
+need that, and would rather drop the Xlib dependency, you can pass
+`--disable-x11` to `configure`, to build without X11 support.
+
+To build the example programs, change into their directory and run `make`. The
+"cube" and "fly" examples use OpenGL and Xlib, so make sure to have `libGL` and
+libX11` installed, before attempting to build them.
 
 
 License
