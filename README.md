@@ -66,7 +66,7 @@ need that, and would rather drop the Xlib dependency, you can pass
 
 To build the example programs, change into their directory and run `make`. The
 "cube" and "fly" examples use OpenGL and Xlib, so make sure to have `libGL` and
-libX11` installed, before attempting to build them.
+`libX11` installed, before attempting to build them.
 
 
 License
