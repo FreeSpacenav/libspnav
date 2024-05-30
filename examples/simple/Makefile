@@ -1,6 +1,9 @@
-CC = gcc
-CFLAGS = -pedantic -Wall -g -I../.. -I../../src -I/usr/local/include
-LDFLAGS = -L../.. -L/usr/local/lib -lspnav -lX11 -lm
+incdir =  -I../.. -I../../src -I/usr/local/include -I/usr/X11R6/include \
+		  -I/opt/homebrew/include
+libdir = -L../.. -L/usr/local/lib -L/usr/X11R6/lib -L/opt/homebrew/lib
+
+CFLAGS = -pedantic -Wall -g $(incdir)
+LDFLAGS = $(libdir) -lspnav -lX11 -lm
 
 .PHONY: all
 all: simple_x11 simple_af_unix

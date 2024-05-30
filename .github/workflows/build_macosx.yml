@@ -54,7 +54,9 @@ jobs:
       run: make
 
     - name: build examples
-      run: make examples
+      run: |
+        make -C examples/simple simple_af_unix
+        make -C examples/fly
 
     - name: stage install
       run: |
