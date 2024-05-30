@@ -48,6 +48,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install libx11-dev libgl1-mesa-dev libglu1-mesa-dev
+
     - name: configure
       run: ./configure --disable-x11
 

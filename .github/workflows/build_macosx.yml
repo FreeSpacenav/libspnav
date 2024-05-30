@@ -15,7 +15,7 @@ jobs:
 
     - name: install dependencies
       run: |
-        brew install libx11 mesa
+        brew install libx11 mesa mesa-glu
 
     - name: configure
       run: ./configure
@@ -46,6 +46,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: install dependencies
+      run: |
+        brew install libx11 mesa mesa-glu
 
     - name: configure
       run: ./configure --disable-x11

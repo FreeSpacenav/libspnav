@@ -17,7 +17,7 @@ jobs:
       uses: vmactions/freebsd-vm@v1
       with:
         prepare: |
-          pkg install -y gmake libX11 mesa-libs
+          pkg install -y gmake libX11 mesa-libs libglvnd libGLU
 
         run: |
           ./configure
@@ -32,7 +32,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: spacenavd-freebsd
-        path: spacenavd-freebsd
+        name: libspnav-freebsd
+        path: libspnav-freebsd
 
 # vi:ts=2 sts=2 sw=2 expandtab:
