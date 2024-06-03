@@ -18,6 +18,7 @@
 
 #define GRID_REP	60
 #define GRID_SZ		200
+#define GRID_RES	7
 
 void gen_textures(void);
 void gen_scene(void);
@@ -35,7 +36,10 @@ void draw_box(float xsz, float ysz, float zsz);
 struct spnav_posrot posrot;
 
 unsigned int grid_tex, box_tex;
-unsigned int scene;
+unsigned int scene, skydome;
+
+float apex_color[] = {0.07, 0.1, 0.4, 1.0f};
+float horiz_color[] = {0.5, 0.2, 0.05, 1.0f};
 
 
 int main(void)
@@ -63,8 +67,9 @@ int main(void)
 	glEnable(GL_CULL_FACE);
 
 	glFogi(GL_FOG_MODE, GL_LINEAR);
-	glFogf(GL_FOG_START, GRID_SZ / 4);
+	glFogf(GL_FOG_START, GRID_SZ / 4.0f);
 	glFogf(GL_FOG_END, GRID_SZ);
+	glFogfv(GL_FOG_COLOR, horiz_color);
 
 	gen_textures();
 	gen_scene();
@@ -178,30 +183,35 @@ void gen_textures(void)
 
 void gen_scene(void)
 {
-	int i, j;
-	float x, y, h;
+	int i, j, k;
+	float x, y, h, u, v, du;
 
 	srand(0);
 
 	scene = glGenLists(1);
 	glNewList(scene, GL_COMPILE);
 
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_FOG);
-
 	/* grid */
 	glBindTexture(GL_TEXTURE_2D, grid_tex);
-
 	glBegin(GL_QUADS);
 	glColor3f(1, 1, 1);
-	glTexCoord2f(0, 0);
-	glVertex3f(-GRID_SZ, 0, GRID_SZ);
-	glTexCoord2f(GRID_REP, 0);
-	glVertex3f(GRID_SZ, 0, GRID_SZ);
-	glTexCoord2f(GRID_REP, GRID_REP);
-	glVertex3f(GRID_SZ, 0, -GRID_SZ);
-	glTexCoord2f(0, GRID_REP);
-	glVertex3f(-GRID_SZ, 0, -GRID_SZ);
+
+	du = 1.0f / (float)GRID_RES;
+	for(i=0; i<GRID_RES; i++) {
+		u = (float)i * du;
+		for(j=0; j<GRID_RES; j++) {
+			v = (float)j * du;
+			for(k=0; k<4; k++) {
+				int gc = k ^ (k >> 1);
+				float tu = (u + (gc & 1) * du) * GRID_REP;
+				float tv = (v + (gc >> 1) * du) * GRID_REP;
+				x = ((u - 0.5f) + (gc & 1) * du) * GRID_SZ * 2.0f;
+				y = ((v - 0.5f) + (gc >> 1) * du) * GRID_SZ * 2.0f;
+				glTexCoord2f(tu, tv);
+				glVertex3f(x, 0, -y);
+			}
+		}
+	}
 	glEnd();
 
 	/* buildings */
@@ -225,19 +235,29 @@ void gen_scene(void)
 			glPopMatrix();
 		}
 	}
+	glEndList();
 
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_FOG);
+	skydome = glGenLists(1);
+	glNewList(skydome, GL_COMPILE);
 
 	/* skydome */
 	glBegin(GL_TRIANGLE_FAN);
-	glColor3f(0.07, 0.1, 0.4);
-	glVertex3f(0, GRID_SZ/5, 0);
-	glColor3f(0.5, 0.2, 0.05);
+	glColor3fv(apex_color);
+	glVertex3f(0, GRID_SZ / 5.0f, 0);
+	glColor3fv(horiz_color);
 	glVertex3f(-GRID_SZ, 0, -GRID_SZ);
 	glVertex3f(GRID_SZ, 0, -GRID_SZ);
 	glVertex3f(GRID_SZ, 0, GRID_SZ);
 	glVertex3f(-GRID_SZ, 0, GRID_SZ);
+	glVertex3f(-GRID_SZ, 0, -GRID_SZ);
+	glEnd();
+	glBegin(GL_TRIANGLE_FAN);
+	glColor3fv(horiz_color);
+	glVertex3f(0, -GRID_SZ / 5.0f, 0);
+	glVertex3f(-GRID_SZ, 0, -GRID_SZ);
+	glVertex3f(-GRID_SZ, 0, GRID_SZ);
+	glVertex3f(GRID_SZ, 0, GRID_SZ);
+	glVertex3f(GRID_SZ, 0, -GRID_SZ);
 	glVertex3f(-GRID_SZ, 0, -GRID_SZ);
 	glEnd();
 
@@ -258,7 +278,22 @@ void redraw(void)
 	glMultMatrixf(xform);		/* concatenate our computed view matrix */
 	glTranslatef(0, -5, 0);		/* move the default view a bit higher above the ground */
 
+	glPushMatrix();
+	xform[12] = xform[13] = xform[14] = 0.0f;
+	glLoadMatrixf(xform);
+	glTranslatef(0, -5, 0);
+
+	glDisable(GL_DEPTH_TEST);
+	glCallList(skydome);
+	glEnable(GL_DEPTH_TEST);
+
+	glPopMatrix();
+
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_FOG);
 	glCallList(scene);
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_FOG);
 
 	glXSwapBuffers(dpy, win);
 }
