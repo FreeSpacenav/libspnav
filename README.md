@@ -1,6 +1,10 @@
 libspnav
 ========
 
+![GNU/Linux build status](https://github.com/FreeSpacenav/libspnav/actions/workflows/build_gnulinux.yml/badge.svg)
+![FreeBSD build status](https://github.com/FreeSpacenav/libspnav/actions/workflows/build_freebsd.yml/badge.svg)
+![MacOS X build status](https://github.com/FreeSpacenav/libspnav/actions/workflows/build_macosx.yml/badge.svg)
+
 About
 -----
 Libspnav is a C library for receiving input from 6 degrees-of-freedom (6dof)
