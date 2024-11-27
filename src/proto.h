@@ -1,7 +1,7 @@
 #ifndef PROTO_H_
 #define PROTO_H_
 
-#ifdef __sgi
+#if defined(__sgi) || defined(__sun)
 #include <inttypes.h>
 #else
 #include <stdint.h>
