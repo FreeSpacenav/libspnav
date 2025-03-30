@@ -12,13 +12,53 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cc: clang-19
+          - cc: gcc-15
+
+    env:
+      CC: ${{ matrix.cc }}
+
     steps:
     - uses: actions/checkout@v4
+
+    - name: add repository "ubuntu-toolchain-r" for GCC 15
+      if: "${{ matrix.cc == 'gcc-15' }}"
+      run: |
+        set -x
+        # The repository is at home at https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test .
+        # NOTE: plucky is 25.04 (not 24.04 LTS)
+        wget -O - 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xc8ec952e2a0e1fbdc5090f6a2c277a0a352154e5' | sudo apt-key add -
+        sudo add-apt-repository 'deb https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu plucky main'
+
+    - name: add repository "llvm-toolchain-[..]" for Clang 19
+      if: "${{ matrix.cc == 'clang-19' }}"
+      run: |-
+        set -x
+        source /etc/os-release
+        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+        sudo add-apt-repository "deb http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-19 main"
 
     - name: install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install libx11-dev libgl1-mesa-dev libglu1-mesa-dev
+
+    - name: install dependency Clang 19
+      if: "${{ matrix.cc == 'clang-19' }}"
+      run: |-
+        sudo apt-get install --yes --no-install-recommends -V \
+            clang-19
+
+    - name: install dependency GCC 15
+      if: "${{ matrix.cc == 'gcc-15' }}"
+      run: |-
+        sudo apt-get install --no-install-recommends --yes -V \
+            binutils \
+            gcc-15
 
     - name: configure
       run: ./configure
@@ -40,7 +80,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: libspnav-gnulinux
+        name: libspnav-gnulinux-${{ matrix.cc }}
         path: libspnav-gnulinux
 
   build-nox11:
