@@ -1,6 +1,22 @@
 #!/bin/sh
 
-echo 'configuring spacenav library...'
+if [ -z "$CC" ]; then
+	CC=cc
+fi
+
+cfgtest_src=.cfgtest.c
+
+run_test() {
+	$CC -o .cfgtest $cfgtest_src >cfgtest.log 2>&1
+	if [ $? != 0 ]; then
+		echo "failed to compile test program, see cfgtest.log" >&2
+		exit 1
+	fi
+	./.cfgtest && cfgtest_result=0 || cfgtest_result=1
+	rm -f .cfgtest $cfgtest_src cfgtest.log
+	return $cfgtest_result
+}
+
 
 PREFIX=/usr/local
 OPT=yes
@@ -27,7 +43,7 @@ libdir=lib
 #	libdir=lib64
 #fi
 
-for arg; do
+for arg in $*; do
 	case "$arg" in
 	--prefix=*)
 		value=`echo $arg | sed 's/--prefix=//'`
@@ -65,6 +81,19 @@ for arg; do
 	esac
 done
 
+sys=`uname -s | sed 's/MINGW.*/mingw/'`
+
+# check if CC is gcc
+echo 'int main(void) {' >$cfgtest_src
+echo '#ifdef __GNUC__' >>$cfgtest_src
+echo '    return 0;' >>$cfgtest_src
+echo '#endif' >>$cfgtest_src
+echo '    return 1; }' >>$cfgtest_src
+run_test && cc_is_gcc=true || cc_is_gcc=false
+
+# check if CC is MIPSpro
+$CC -version 2>&1 | grep MIPSpro >/dev/null && cc_is_mipspro=true || cc_is_mipspro=false
+
 echo "  prefix: $PREFIX"
 echo "  optimize for speed: $OPT"
 echo "  include debugging symbols: $DBG"
@@ -96,17 +125,34 @@ if [ -n "$LDFLAGS" ]; then
 fi
 
 if [ "$DBG" = 'yes' ]; then
-	echo 'dbg = -g' >>Makefile
+	echo 'dbg = -g3' >>Makefile
 fi
 
 if [ "$OPT" = 'yes' ]; then
-	echo 'opt = -O3' >>Makefile
+	if $cc_is_gcc; then
+		echo 'opt = -O2 -fno-strict-aliasing' >>Makefile
+	else
+		echo 'opt = -O2' >>Makefile
+	fi
 fi
 
 if [ "$X11" = 'yes' ]; then
 	echo 'magellan_obj = src/spnav_magellan.o' >>Makefile
 	echo 'xlib = -lX11' >>Makefile
 fi
+
+if $cc_is_gcc; then
+	echo 'cc_cflags = -std=c89 -pedantic -Wall -MMD' >>Makefile
+fi
+
+if [ "$sys" != mingw -a "$sys" != Darwin ]; then
+	if $cc_is_mipspro; then
+		echo 'pic = -KPIC' >>Makefile
+	else
+		echo 'pic = -fPIC' >>Makefile
+	fi
+fi
+
 
 cat "$srcdir/Makefile.in" >>Makefile
 

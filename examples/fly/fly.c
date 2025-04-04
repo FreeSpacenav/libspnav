@@ -16,6 +16,12 @@
 #include <spnav.h>
 #include "xwin.h"
 
+#ifndef GL_VERSION_1_1
+#define glGenTextures glGenTexturesEXT
+#define glDeleteTextures glDeleteTexturesEXT
+#define glBindTexture glBindTextureEXT
+#endif
+
 #define GRID_REP	60
 #define GRID_SZ		200
 #define GRID_RES	7
