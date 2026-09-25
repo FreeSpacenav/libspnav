@@ -102,6 +102,7 @@ int spnav_open(void)
 	char *path;
 	FILE *fp;
 	char buf[256], *ptr;
+	char rtpath[256];
 
 	if(IS_OPEN) {
 		return -1;
@@ -140,6 +141,14 @@ int spnav_open(void)
 			}
 		}
 		if(path && connect_afunix(s, path) == 0) goto success;
+	}
+
+	/* try a per-user socket under XDG_RUNTIME_DIR */
+	if((path = getenv("XDG_RUNTIME_DIR")) && *path) {
+		if(strlen(path) + sizeof "/spnav.sock" <= sizeof rtpath) {
+			sprintf(rtpath, "%s/spnav.sock", path);
+			if(connect_afunix(s, rtpath) == 0) goto success;
+		}
 	}
 
 	/* by default use SPNAV_SOCK_PATH (see top of this file) */
