@@ -90,8 +90,12 @@ static int connect_afunix(int s, const char *path)
 {
 	struct sockaddr_un addr = {0};
 
+	if(strlen(path) >= sizeof addr.sun_path) {
+		return -1;
+	}
+
 	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, path, sizeof addr.sun_path - 1);
+	strcpy(addr.sun_path, path);
 
 	return connect(s, (struct sockaddr*)&addr, sizeof addr);
 }
@@ -102,7 +106,6 @@ int spnav_open(void)
 	char *path;
 	FILE *fp;
 	char buf[256], *ptr;
-	char rtpath[256];
 
 	if(IS_OPEN) {
 		return -1;
@@ -145,9 +148,9 @@ int spnav_open(void)
 
 	/* try a per-user socket under XDG_RUNTIME_DIR */
 	if((path = getenv("XDG_RUNTIME_DIR")) && *path) {
-		if(strlen(path) + sizeof "/spnav.sock" <= sizeof rtpath) {
-			sprintf(rtpath, "%s/spnav.sock", path);
-			if(connect_afunix(s, rtpath) == 0) goto success;
+		if(strlen(path) + sizeof "/spnav.sock" <= sizeof buf) {
+			sprintf(buf, "%s/spnav.sock", path);
+			if(connect_afunix(s, buf) == 0) goto success;
 		}
 	}
 
